@@ -11,6 +11,7 @@ max_y = 800  # latitudine minima
 
 rn.seed(1625)  # Per la riproducibilità degli esempi
 
+
 # definisco la classe di sensori
 class Sensor:
     def __init__(self, an_id):
@@ -20,6 +21,7 @@ class Sensor:
         self.portata = rn.uniform(50, 150)
         self.send_rate = rn.randint(1, 10)
         self.send_rate_unit = "msg/s"
+
 
 # definisco la classe di gateway
 class Gateway:
@@ -76,14 +78,55 @@ def find_best_gateway(capacita):
         else:
             return gw
 
-#array di sensori
+
+# array di sensori
 sensors = []
 
-#array di gateway
+# array di gateway
 gateways = []
 
+#Questa funxione dato l'array di sensori calcola un dizionario ordinato per il parametro order_by.
+def calcola_scenario(order_by="rapp_cap_costo", sensor_list = None):
+    global sensors
+    if sensor_list is None:
+        sensor_list = sensors
+    sens_dictionary = {}
+    for this_sens in sensor_list:
+        this_senders = find_senders(this_sens)
+        tot_capacita = 0
+        num_sensori = len(this_senders)
+        for temp_sens in this_senders:
+            tot_capacita += temp_sens.send_rate
+        rapp_cap_costo = tot_capacita / find_best_gateway(tot_capacita).costo
+        rapp_numsensori_costo = num_sensori / find_best_gateway(tot_capacita).costo
+        sens_dictionary[this_sens] = {"senders": this_senders,
+                                      "tot_capacita": tot_capacita,
+                                      "rapp_cap_costo": rapp_cap_costo,
+                                      "rapp_numsensori_costo": rapp_numsensori_costo}
+        if verbose:
+            print("\nIl sensore " + str(this_sens.id) + " è nel raggio di " + str(num_sensori) + " sensori," +
+                  " che hanno una capacità totale di " + str(tot_capacita) + " " + this_sens.send_rate_unit)
 
-#----MAIN
+    return {k: v for k, v in sorted(sens_dictionary.items(),
+                                                    key=lambda item: item[1][order_by],
+                                                    reverse=True)}
+
+def print_scenario(dict):
+    for temp_sens in dict.keys():
+        print("\nSensore " + str(temp_sens.id) + ":")
+        temp_val = dict[temp_sens]
+        temp_sens_list = temp_val["senders"]
+        temp_tot_cap = temp_val["tot_capacita"]
+        temp_rapp_cap_costo = temp_val["rapp_cap_costo"]
+        print("Senders: ", end='')
+        for temp_sender in temp_sens_list:
+            print(str(temp_sender.id) + " ", end='')
+        print("\nTot_capacità: " + str(temp_tot_cap))
+        print("Rapporto capacità/costo: " + str(temp_rapp_cap_costo))
+    print("\n\n")
+
+
+# ----MAIN
 if __name__ == '__main__':
     # -----------------------------------
     # DEFINIZIONE DATI
@@ -172,63 +215,27 @@ if __name__ == '__main__':
     # avverrà più quando rimuovo i sensori dopo aver installato un dispositivo
     # e quindi avendoli "coperti")
 
-    sens_dictionary = {}
-    for this_sens in sensors:
-        this_senders = find_senders(this_sens)
-        tot_capacita = 0
-        num_sensori = len(this_senders)
-        for temp_sens in this_senders:
-            tot_capacita += temp_sens.send_rate
-        rapp_cap_costo = tot_capacita/find_best_gateway(tot_capacita).costo
-        rapp_numsensori_costo = num_sensori/find_best_gateway(tot_capacita).costo
-        sens_dictionary[this_sens] = {"senders": this_senders,
-                                      "tot_capacita": tot_capacita,
-                                      "rapp_cap_costo": rapp_cap_costo,
-                                      "rapp_numsensori_costo": rapp_numsensori_costo}
-        print("\nIl sensore " + str(this_sens.id) + " è nel raggio di " + str(num_sensori) + " sensori," +
-              " che hanno una capacità totale di " + str(tot_capacita) + " " + this_sens.send_rate_unit)
-
-    # Stampa il dizionario appena creato
-    # pp = pprint.PrettyPrinter(indent=5)
-    # pp.pprint(sens_dictionary)
-
-    # Ordino secondo il miglior rapporto capacità/costo e stampo
-    sens_dict_ord_by_cap = {k: v for k, v in sorted(sens_dictionary.items(),
-                                                    key=lambda item: item[1]["rapp_cap_costo"],
-                                                    reverse=True)}
-    # Ordino secondo il miglior rapporto numsensori coperti/costo
-    sens_dict_ord_by_numsensori = {k: v for k, v in sorted(sens_dictionary.items(),
-                                                    key=lambda item: item[1]["rapp_numsensori_costo"],
-                                                    reverse=True)}
-
-    print("\n\n\n")
-    for temp_sens in sens_dict_ord_by_cap.keys():
-        print("\nSensore " + str(temp_sens.id) + ":")
-        temp_val = sens_dict_ord_by_cap[temp_sens]
-        temp_sens_list = temp_val["senders"]
-        temp_tot_cap = temp_val["tot_capacita"]
-        temp_rapp_cap_costo = temp_val["rapp_cap_costo"]
-        print("Senders: ", end='')
-        for temp_sender in temp_sens_list:
-            print(str(temp_sender.id) + " ", end='')
-        print("\nTot_capacità: " + str(temp_tot_cap))
-        print("Rapporto capacità/costo: " + str(temp_rapp_cap_costo))
+    #calcola l'insieme dei sensori con le relative proprietà
+    sens_dict_ord_by_cap = calcola_scenario()
+    if verbose:
+        print("SCENARIO: ")
+        print_scenario(sens_dict_ord_by_cap)
 
     # Seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
     selected = {}
     sensors_copy = sensors.copy()
     costo_totale = 0
     i = 0
-    for temp_sens in sens_dict_ord_by_cap.keys():
-        where = temp_sens
-        temp_val = sens_dict_ord_by_cap[temp_sens]
+    while  len(sens_dict_ord_by_cap) > 0:
+        (where, temp_val) = list(sens_dict_ord_by_cap.items())[0]
+        #temp_val = sens_dict_ord_by_cap[where]
         which_covered = temp_val["senders"]
         which_gateway = find_best_gateway(temp_val["tot_capacita"])
         selected[i] = {
             "location": {
-                "sensor_id": temp_sens.id,
-                "latitudine": temp_sens.latitudine,
-                "longitudine": temp_sens.longitudine
+                "sensor_id": where.id,
+                "latitudine": where.latitudine,
+                "longitudine": where.longitudine
             },
             "selected_gateway": {
                 "classe": which_gateway.id,
@@ -242,6 +249,13 @@ if __name__ == '__main__':
         for a_sensor in which_covered:
             if a_sensor in sensors_copy:
                 sensors_copy.remove(a_sensor)
+        print("\n ITERAZIONE: "+str(i-1))
+        for temp in sensors_copy:
+            print(temp.id, end=',')
+        print("\n")
+
+        sens_dict_ord_by_cap = calcola_scenario(sensor_list=sensors_copy)
+
 
     # Stampo il dizionario che mostra dove e quali dispositivi ho installato
     print("\n\n\n")
@@ -249,7 +263,7 @@ if __name__ == '__main__':
     pp.pprint(selected)
 
     if len(sensors_copy) == 0:
-        print("Non sono rimasti sensori da coprire. Il costo della soluzione è "+str(costo_totale))
+        print("Non sono rimasti sensori da coprire. Il costo della soluzione è " + str(costo_totale))
     else:
         print("Sono rimasti sensori da coprire. Nessuna soluzione ammissibile trovata!")
 
@@ -258,5 +272,3 @@ if __name__ == '__main__':
     ax.set_ybound(lower=0.0, upper=max_y)
     plt.grid()
     plt.show()
-
-
