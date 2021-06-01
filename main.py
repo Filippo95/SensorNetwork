@@ -125,6 +125,54 @@ def print_scenario(dict):
         print("Rapporto capacità/costo: " + str(temp_rapp_cap_costo))
     print("\n\n")
 
+def greedy_optimization(sensors,sens_dict_ord_by_cap):
+    # Seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
+    selected = {}
+    sensors_copy = sensors.copy()
+    costo_totale = 0
+    i = 0
+    while len(sens_dict_ord_by_cap) > 0:
+        (where, temp_val) = list(sens_dict_ord_by_cap.items())[0]
+        # temp_val = sens_dict_ord_by_cap[where]
+        which_covered = temp_val["senders"]
+        which_gateway = find_best_gateway(temp_val["tot_capacita"])
+        selected[i] = {
+            "location": {
+                "sensor_id": where.id,
+                "latitudine": where.latitudine,
+                "longitudine": where.longitudine
+            },
+            "selected_gateway": {
+                "classe": which_gateway.id,
+                "costo": which_gateway.costo
+            }
+        }
+        costo_totale += which_gateway.costo
+        i += 1
+        # Rimuovo da una copia dell'array dei sensori i sensori che ho
+        # coperto con questa iterazione
+        for a_sensor in which_covered:
+            if a_sensor in sensors_copy:
+                sensors_copy.remove(a_sensor)
+        print("\n ITERAZIONE: " + str(i - 1))
+        for temp in sensors_copy:
+            print(temp.id, end=',')
+        print("\n")
+
+        # aggiorno lo scenario dopo l'assegnazione, e dopo aver tolot quelli già assegnati
+        sens_dict_ord_by_cap = calcola_scenario(sensor_list=sensors_copy)
+
+    # Stampo il dizionario che mostra dove e quali dispositivi ho installato
+    print("\n\n\n")
+    pp = pprint.PrettyPrinter(indent=3)
+    pp.pprint(selected)
+
+    if len(sensors_copy) == 0:
+        print("Non sono rimasti sensori da coprire. Il costo della soluzione è " + str(costo_totale))
+    else:
+        print("Sono rimasti sensori da coprire. Nessuna soluzione ammissibile trovata!")
+
+
 
 # ----MAIN
 if __name__ == '__main__':
@@ -217,55 +265,13 @@ if __name__ == '__main__':
 
     #calcola l'insieme dei sensori con le relative proprietà
     sens_dict_ord_by_cap = calcola_scenario()
+    sens_dist_ord_by_num_sensori= calcola_scenario(order_by="rapp_numsensori_costo")
     if verbose:
         print("SCENARIO: ")
         print_scenario(sens_dict_ord_by_cap)
 
-    # Seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
-    selected = {}
-    sensors_copy = sensors.copy()
-    costo_totale = 0
-    i = 0
-    while  len(sens_dict_ord_by_cap) > 0:
-        (where, temp_val) = list(sens_dict_ord_by_cap.items())[0]
-        #temp_val = sens_dict_ord_by_cap[where]
-        which_covered = temp_val["senders"]
-        which_gateway = find_best_gateway(temp_val["tot_capacita"])
-        selected[i] = {
-            "location": {
-                "sensor_id": where.id,
-                "latitudine": where.latitudine,
-                "longitudine": where.longitudine
-            },
-            "selected_gateway": {
-                "classe": which_gateway.id,
-                "costo": which_gateway.costo
-            }
-        }
-        costo_totale += which_gateway.costo
-        i += 1
-        # Rimuovo da una copia dell'array dei sensori i sensori che ho
-        # coperto con questa iterazione
-        for a_sensor in which_covered:
-            if a_sensor in sensors_copy:
-                sensors_copy.remove(a_sensor)
-        print("\n ITERAZIONE: "+str(i-1))
-        for temp in sensors_copy:
-            print(temp.id, end=',')
-        print("\n")
-
-        sens_dict_ord_by_cap = calcola_scenario(sensor_list=sensors_copy)
-
-
-    # Stampo il dizionario che mostra dove e quali dispositivi ho installato
-    print("\n\n\n")
-    pp = pprint.PrettyPrinter(indent=3)
-    pp.pprint(selected)
-
-    if len(sensors_copy) == 0:
-        print("Non sono rimasti sensori da coprire. Il costo della soluzione è " + str(costo_totale))
-    else:
-        print("Sono rimasti sensori da coprire. Nessuna soluzione ammissibile trovata!")
+    greedy_optimization(sensors,sens_dict_ord_by_cap)
+    greedy_optimization(sensors,sens_dist_ord_by_num_sensori)
 
     ax.set_aspect('equal', anchor="C")
     ax.set_xbound(lower=0.0, upper=max_x)
