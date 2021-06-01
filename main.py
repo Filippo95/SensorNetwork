@@ -6,12 +6,12 @@ import math
 from matplotlib import pyplot as plt
 import pprint
 
-max_x = 1200  # longitudine
-max_y = 800  # latitudine
+max_x = 1200  # longitudine massima
+max_y = 800  # latitudine minima
 
 rn.seed(1625)  # Per la riproducibilità degli esempi
 
-
+# definisco la classe di sensori
 class Sensor:
     def __init__(self, an_id):
         self.id = an_id
@@ -21,7 +21,7 @@ class Sensor:
         self.send_rate = rn.randint(1, 10)
         self.send_rate_unit = "msg/s"
 
-
+# definisco la classe di gateway
 class Gateway:
     def __init__(self, an_id, costo, capacita):
         self.id = an_id  # ID o "classe" del dispositivo
@@ -76,11 +76,18 @@ def find_best_gateway(capacita):
         else:
             return gw
 
-
+#array di sensori
 sensors = []
+
+#array di gateway
 gateways = []
 
+
+#----MAIN
 if __name__ == '__main__':
+    # -----------------------------------
+    # DEFINIZIONE DATI
+    # -----------------------------------
     num_sensori = 50
     color_map_name = "viridis"
     verbose = len(sys.argv) > 1 and "-v" in sys.argv
@@ -132,7 +139,9 @@ if __name__ == '__main__':
     for x_pos, y_pos, label in zip(x, y, labels):
         ax.annotate(label, xy=(x_pos, y_pos), xytext=(7, 0), textcoords='offset points',
                     ha='left', va='center')
-
+    # -----------------------------------
+    # ANALISI
+    # -----------------------------------
     # print("Mostra i sender per tutti i sensori")
     # sens_dict = {}
     # for this_sens in sensors:
@@ -162,6 +171,7 @@ if __name__ == '__main__':
     # installo sempre un dispositivo presso ogni sensore disponibile (non
     # avverrà più quando rimuovo i sensori dopo aver installato un dispositivo
     # e quindi avendoli "coperti")
+
     sens_dictionary = {}
     for this_sens in sensors:
         this_senders = find_senders(this_sens)
@@ -170,9 +180,11 @@ if __name__ == '__main__':
         for temp_sens in this_senders:
             tot_capacita += temp_sens.send_rate
         rapp_cap_costo = tot_capacita/find_best_gateway(tot_capacita).costo
+        rapp_numsensori_costo = num_sensori/find_best_gateway(tot_capacita).costo
         sens_dictionary[this_sens] = {"senders": this_senders,
                                       "tot_capacita": tot_capacita,
-                                      "rapp_cap_costo": rapp_cap_costo}
+                                      "rapp_cap_costo": rapp_cap_costo,
+                                      "rapp_numsensori_costo": rapp_numsensori_costo}
         print("\nIl sensore " + str(this_sens.id) + " è nel raggio di " + str(num_sensori) + " sensori," +
               " che hanno una capacità totale di " + str(tot_capacita) + " " + this_sens.send_rate_unit)
 
@@ -184,6 +196,11 @@ if __name__ == '__main__':
     sens_dict_ord_by_cap = {k: v for k, v in sorted(sens_dictionary.items(),
                                                     key=lambda item: item[1]["rapp_cap_costo"],
                                                     reverse=True)}
+    # Ordino secondo il miglior rapporto numsensori coperti/costo
+    sens_dict_ord_by_numsensori = {k: v for k, v in sorted(sens_dictionary.items(),
+                                                    key=lambda item: item[1]["rapp_numsensori_costo"],
+                                                    reverse=True)}
+
     print("\n\n\n")
     for temp_sens in sens_dict_ord_by_cap.keys():
         print("\nSensore " + str(temp_sens.id) + ":")
@@ -241,3 +258,5 @@ if __name__ == '__main__':
     ax.set_ybound(lower=0.0, upper=max_y)
     plt.grid()
     plt.show()
+
+
