@@ -6,10 +6,13 @@ import math
 from matplotlib import pyplot as plt
 import pprint
 
+random_seed = 1625  # Per la riproducibilità degli esempi
+# Il seed originale è 1625
+
 max_x = 1200  # longitudine massima
 max_y = 800  # latitudine minima
 
-rn.seed(1625)  # Per la riproducibilità degli esempi
+rn.seed(random_seed)
 
 
 # definisco la classe di sensori
@@ -85,8 +88,9 @@ sensors = []
 # array di gateway
 gateways = []
 
-#Questa funxione dato l'array di sensori calcola un dizionario ordinato per il parametro order_by.
-def calcola_scenario(order_by="rapp_cap_costo", sensor_list = None):
+
+# Questa funzione dato l'array di sensori calcola un dizionario ordinato per il parametro order_by.
+def calcola_scenario(order_by="rapp_cap_costo", sensor_list=None):
     global sensors
     if sensor_list is None:
         sensor_list = sensors
@@ -108,32 +112,36 @@ def calcola_scenario(order_by="rapp_cap_costo", sensor_list = None):
                   " che hanno una capacità totale di " + str(tot_capacita) + " " + this_sens.send_rate_unit)
 
     return {k: v for k, v in sorted(sens_dictionary.items(),
-                                                    key=lambda item: item[1][order_by],
-                                                    reverse=True)}
+                                    key=lambda item: item[1][order_by],
+                                    reverse=True)}
 
-def print_scenario(dict):
-    for temp_sens in dict.keys():
+
+def print_scenario(a_dict):
+    for temp_sens in a_dict.keys():
         print("\nSensore " + str(temp_sens.id) + ":")
-        temp_val = dict[temp_sens]
+        temp_val = a_dict[temp_sens]
         temp_sens_list = temp_val["senders"]
         temp_tot_cap = temp_val["tot_capacita"]
         temp_rapp_cap_costo = temp_val["rapp_cap_costo"]
+        temp_rapp_numsensori_costo = temp_val["rapp_numsensori_costo"]
         print("Senders: ", end='')
         for temp_sender in temp_sens_list:
             print(str(temp_sender.id) + " ", end='')
         print("\nTot_capacità: " + str(temp_tot_cap))
         print("Rapporto capacità/costo: " + str(temp_rapp_cap_costo))
+        print("Rapporto numsensori/costo: " + str(temp_rapp_numsensori_costo))
     print("\n\n")
 
-def greedy_optimization(sensors,sens_dict_ord_by_cap):
+
+def greedy_optimization(sensors, sens_dict_ordered):
     # Seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
+    # (o rapporto numsensori/costo maggiore)
     selected = {}
     sensors_copy = sensors.copy()
     costo_totale = 0
     i = 0
-    while len(sens_dict_ord_by_cap) > 0:
-        (where, temp_val) = list(sens_dict_ord_by_cap.items())[0]
-        # temp_val = sens_dict_ord_by_cap[where]
+    while len(sens_dict_ordered) > 0:
+        (where, temp_val) = list(sens_dict_ordered.items())[0]
         which_covered = temp_val["senders"]
         which_gateway = find_best_gateway(temp_val["tot_capacita"])
         selected[i] = {
@@ -159,19 +167,29 @@ def greedy_optimization(sensors,sens_dict_ord_by_cap):
             print(temp.id, end=',')
         print("\n")
 
-        # aggiorno lo scenario dopo l'assegnazione, e dopo aver tolot quelli già assegnati
-        sens_dict_ord_by_cap = calcola_scenario(sensor_list=sensors_copy)
+        # aggiorno lo scenario dopo l'assegnazione, e dopo aver rimosso quelli già assegnati
+        sens_dict_ordered = calcola_scenario(sensor_list=sensors_copy)
 
     # Stampo il dizionario che mostra dove e quali dispositivi ho installato
     print("\n\n\n")
     pp = pprint.PrettyPrinter(indent=3)
     pp.pprint(selected)
 
-    if len(sensors_copy) == 0:
-        print("Non sono rimasti sensori da coprire. Il costo della soluzione è " + str(costo_totale))
-    else:
-        print("Sono rimasti sensori da coprire. Nessuna soluzione ammissibile trovata!")
-
+    with open('greedy_output.txt', 'a') as f:
+        original_stdout = sys.stdout
+        if len(sensors_copy) == 0:
+            print("Non sono rimasti sensori da coprire. Il costo della soluzione è " + str(costo_totale))
+            sys.stdout = f
+            print("SEED: " + str(random_seed))
+            print("Non sono rimasti sensori da coprire. Il costo della soluzione è " + str(costo_totale))
+            print("\n")
+            sys.stdout = original_stdout
+        else:
+            sys.stdout = f
+            print("SEED: " + str(random_seed))
+            print("Sono rimasti sensori da coprire. Nessuna soluzione ammissibile trovata!")
+            print("\n")
+            sys.stdout = original_stdout
 
 
 # ----MAIN
@@ -231,47 +249,21 @@ if __name__ == '__main__':
         ax.annotate(label, xy=(x_pos, y_pos), xytext=(7, 0), textcoords='offset points',
                     ha='left', va='center')
     # -----------------------------------
-    # ANALISI
+    # ANALISI (???)
     # -----------------------------------
-    # print("Mostra i sender per tutti i sensori")
-    # sens_dict = {}
-    # for this_sens in sensors:
-    #     this_senders = find_senders(this_sens)
-    #     num_sensori = len(this_senders)
-    #     sens_dict[this_sens.id] = num_sensori
-    #     print("\nIl sensore " + str(this_sens.id) + " è nel raggio di " + str(num_sensori) + " altri sensori:")
-    #     for temp_sens in this_senders:
-    #         print(temp_sens.id)
-    # print(sens_dict)
-    #
-    # sensors_one = sensors.copy()
-    # sens_dict_by_senders = {k: v for k, v in sorted(sens_dict.items(), key=lambda item: item[1], reverse=True)}
-    # print("Dizionario dei sensori, in ordine per numero di sender")
-    # print(sens_dict_by_senders)
 
-    # Greedy che seleziona per primi i siti in cui
-    # il rapporto capacità/costo è massimo
-    # TODO: Leggere il commento sottostante e implementare il ricalcolo del rapporto capacità/costo
-    # ATTENZIONE!!!!!!!!!!!!!!!!! In questa versione non c'è
-    # alcun tipo di riaggiornamento del rapporto capacità/costo dopo aver
-    # selezionato un sito dove installare un dispositivo. Invece, ogni volta
-    # che decido di installare un dispositivo, dovrei rimuovere i sensori
-    # dall'insieme di quelli ancora scoperti e andarmi a ricalcolare il
-    # rapporto capacità/costo con tutti quelli rimasti.
-    # Inoltre questo mi permetterà di evitare ciò che succede ora, cioè che
-    # installo sempre un dispositivo presso ogni sensore disponibile (non
-    # avverrà più quando rimuovo i sensori dopo aver installato un dispositivo
-    # e quindi avendoli "coperti")
-
-    #calcola l'insieme dei sensori con le relative proprietà
+    # calcola l'insieme dei sensori con le relative proprietà
     sens_dict_ord_by_cap = calcola_scenario()
-    sens_dist_ord_by_num_sensori= calcola_scenario(order_by="rapp_numsensori_costo")
+    sens_dict_ord_by_num_sensori = calcola_scenario(order_by="rapp_numsensori_costo")
     if verbose:
-        print("SCENARIO: ")
+        print("SCENARIO - CAPACITA'/COSTO: ")
         print_scenario(sens_dict_ord_by_cap)
+        print("\n\n\n\n\n---------------------------------------------------\n\n\n\n\n")
+        print("SCENARIO - NUM_SENSORI/COSTO: ")
+        print_scenario(sens_dict_ord_by_num_sensori)
 
-    greedy_optimization(sensors,sens_dict_ord_by_cap)
-    greedy_optimization(sensors,sens_dist_ord_by_num_sensori)
+    greedy_optimization(sensors, sens_dict_ord_by_cap)
+    greedy_optimization(sensors, sens_dict_ord_by_num_sensori)
 
     ax.set_aspect('equal', anchor="C")
     ax.set_xbound(lower=0.0, upper=max_x)
