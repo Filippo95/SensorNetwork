@@ -21,8 +21,8 @@ class Sensor:
         self.id = an_id
         self.longitudine = rn.uniform(0, max_x)
         self.latitudine = rn.uniform(0, max_y)
-        self.portata = rn.uniform(50, 150)#distaza raggio di copertura
-        self.send_rate = rn.randint(1, 10)# quanti msg
+        self.portata = rn.uniform(50, 150)  # distanza raggio di copertura
+        self.send_rate = rn.randint(1, 10)  # quanti msg
         self.send_rate_unit = "msg/s"
 
 
@@ -35,9 +35,6 @@ class Gateway:
         self.costo = costo
         self.capacita = capacita
         self.capacita_elab_unit = "msg/s"
-
-
-
 
 
 # class Progetto:
@@ -85,12 +82,6 @@ def find_best_gateway(capacita):
             return gw
 
     return gateways[-1]
-
-
-
-
-
-
 
 
 # array di sensori
@@ -144,31 +135,31 @@ def print_scenario(a_dict):
     print("\n\n")
 
 
-def find_covered(sensor,capacita_to_cover, senders, capacita_gateway, find_by="distanza_capacita"):
+def find_covered(sensor, capacita_to_cover, senders, capacita_gateway, find_by="distanza_capacita"):
     selected = []
 
     for sender in senders:
 
         if find_by == "capacita":
             sender.criterio = sender.send_rate
-        else :
+        else:
             distanza = distance(sensor, sender)
             if distanza == 0:
                 distanza = 0.0001
-            sender.criterio = sender.send_rate / distanza  # vogliamo prioritizzare i sensori che hanno raggio molto piccolo e capacità molto grande quindi tra quelli più vicini con send_rate più grande
+            sender.criterio = sender.send_rate / distanza  # vogliamo prioritizzare i sensori che hanno
+            # raggio molto piccolo e capacità molto grande, quindi tra quelli più vicini con send_rate più grande
 
     senders = sorted(senders,
-                                    key=lambda item: item.criterio,
-                                    reverse=True)#in ordine decrescente
-    capacita_coperta=0
+                     key=lambda item: item.criterio,
+                     reverse=True)  # in ordine decrescente
+    capacita_coperta = 0
 
     while len(senders) > 0:
-        #prendo il primo elemento di senders ordinato per il criterio e controllo che ci stia
-        if senders[0].send_rate+capacita_coperta <= capacita_gateway:
-            capacita_coperta += senders[0].send_rate #aggiungo all'accumulatore
-            selected.append(senders[0]) #aggiungo ai coperti
-        senders.remove(senders[0]) #elimino dai possibili coperti
-
+        # prendo il primo elemento di senders ordinato per il criterio e controllo che ci stia
+        if senders[0].send_rate + capacita_coperta <= capacita_gateway:
+            capacita_coperta += senders[0].send_rate  # aggiungo all'accumulatore
+            selected.append(senders[0])  # aggiungo ai coperti
+        senders.remove(senders[0])  # elimino dai possibili coperti
 
     return selected
 
@@ -185,27 +176,24 @@ def greedy_optimization(sensors, sens_dict_ordered, pack_by="distanza_capacita")
 
         which_gateway = find_best_gateway(temp_val["tot_capacita"])
 
-        if temp_val["tot_capacita"]>which_gateway.capacita:
-            which_covered = find_covered(where,temp_val["tot_capacita"],temp_val["senders"],which_gateway.capacita,pack_by)
+        if temp_val["tot_capacita"] > which_gateway.capacita:
+            which_covered = find_covered(where, temp_val["tot_capacita"], temp_val["senders"], which_gateway.capacita,
+                                         pack_by)
         else:
             which_covered = temp_val["senders"]
 
         # creo una array per la stampa dei sensori coperti
-        arr=[]
+        arr = []
         for sensor in which_covered:
             arr.append(sensor.id)
 
         selected[i] = {
-            "gateway": {
-                "sensor_id": where.id,
-                "latitudine": where.latitudine,
-                "longitudine": where.longitudine,
-
-                "classe": which_gateway.id,
-                "costo": which_gateway.costo,
-                "sensor_covered": arr
-
-            }
+            "sensor_id": where.id,
+            "latitudine": where.latitudine,
+            "longitudine": where.longitudine,
+            "classe": which_gateway.id,
+            "costo": which_gateway.costo,
+            "sensor_covered": arr
         }
         costo_totale += which_gateway.costo
         i += 1
@@ -246,64 +234,77 @@ def greedy_optimization(sensors, sens_dict_ordered, pack_by="distanza_capacita")
 
 
 def distance_by_coord(sorgente, destinazione):
-    return math.sqrt((sorgente[0]-destinazione[0])**2+(sorgente[1]-destinazione[1])**2)
+    return math.sqrt((sorgente[0] - destinazione[0]) ** 2 + (sorgente[1] - destinazione[1]) ** 2)
 
-#TODO implementare la funzione di visita in profondità
+
+# TODO implementare la funzione di visita in profondità
+# Si tratterà di una visita in profondità (Depth-First Search),
+# dove terrò in memoria i nodi che ho visitato, e se a un certo
+# punto della visita incontro un nodo già visitato, allora posso
+# concludere che il grafo contiene un ciclo. Bisogna però fare
+# attenzione: se visito il nodo A e poi il suo vicino B, il fatto
+# che visitando B io trovi nuovamente A non deve significare che
+# c'è un ciclo nel grafo; va quindi tenuto in memoria anche il
+# "parent", o il nodo che si è appena esplorato, per evitare
+# di incorrere in errori.
 def ha_cicli(selected):
-    #faccio una riceerca in profondità
-    visited = []
-    for arco in selected:
-        if arco["source"] in visited:
-            return True
-        else:
-            visited.append(arco["source"])
-            ha_cicli(selected.pop())
+    return False
 
-#TODO metodo che ritorna true o false
-# True se esiste un arco in edges che va da destinationa soruce
-# False se non esiste un arco in edges che va da destination a source
-def esiste_reverse(edges, source, destination):
-    return True
+
+def esiste_arco(edges, source, destination):
+    for item in edges:
+        if (item["source"] == source and item["destination"] == destination) or \
+                (item["source"] == destination and item["destination"] == source):
+            return True
+    return False
 
 
 def minimum_spanning_tree(result):
-    vertices = []#i nodi del grafo
-    edges = []#gli archi del grafo
+    # Costruisco il grafo dei dispositivi, che è un grafo
+    # completamente connesso i cui nodi rappresentano i dispositivi
+    vertices = []  # i nodi del grafo
+    edges = []  # gli archi del grafo
 
     for gateway in result:
         vertices.append(gateway)
-        temp_result=result.copy() # creo una copia deel dizionario in modo da poi eliminare l'elemeento attuale
-        temp_result.pop(gateway)
+        temp_result = result.copy()  # creo una copia del dizionario
+        temp_result.pop(gateway)  # e ne elimino l'elemento attuale
         for node in temp_result:
-            if not(esiste_reverse(edges, gateway,node)):
+            if not esiste_arco(edges, gateway, node):  # se non esiste già l'arco che connette il gateway attuale
+                # con il nodo attuale (cioè qualsiasi altro gateway), lo aggiungo al grafo (senza questo check avrei
+                # un multigrafo, noi invece vogliamo creare un grafo semplice)
                 edges.append({
                     "source": gateway,
                     "destination": node,
-                    "costo": distance_by_coord((result.get(gateway)['latitudine'],result.get(gateway)['longitudine']),
-                                               (result.get(node)['latitudine'],result.get(node)['longitudine'])) * rn.uniform(0.5, 1.5)
+                    "costo": distance_by_coord((result.get(gateway)['latitudine'],  # Vengono passate delle tuple
+                                                result.get(gateway)['longitudine']),  # di coordinate
+                                               (result.get(node)['latitudine'],
+                                                result.get(node)['longitudine'])) * rn.uniform(0.5, 1.5)
+                    # La funzione costo è proporzionale alla distanza fra i due dispositivi, ma moltiplicata
+                    # per un fattore casuale che varia fra i due estremi
                 })
 
-    #kruskal
-    #ordino gli archi per costo
-    edges = {k: v for k, v in sorted(edges.items(),
-                             key=lambda item: item[1]["costo"],
-                             reverse=False)}# dal più basso al più alto
+    # Algoritmo di Kruskal:
+    # 1) Seleziono l'arco di costo minimo fra quelli non ancora considerati e lo aggiungo alla soluzione
+    # 2) Se il grafo risultante contiene un ciclo lo rimuovo dalla soluzione e continuo
+    # 3) Se il grafo, invece, è aciclico, lo mantengo nella soluzione e continuo
+    # 4) Mi fermo se ho esaminato tutti gli archi o se len(soluzione) == n-1 (numero di vertici, o nodi, -1)
 
-    # creo un arrray che contiene gli archi che ho selezionato
-    selected=[]
-    i=0
-    while len(edges)>0 and len(selected)<len(vertices)-1:
-        #aggiungo l'arco alla soluzione
+    # ordino gli archi per costo
+    edges = sorted(edges,
+                   key=lambda item: item["costo"],
+                   reverse=False)  # dal più basso al più alto
+
+    # creo un array che contiene gli archi che ho selezionato
+    selected = []
+    while len(edges) > 0 and len(selected) < len(vertices) - 1:
+        # aggiungo l'arco alla soluzione (il primo elemento di edges
+        # è sempre quello con costo minore)
         selected.append(edges[0])
-        # passo la la suole (il grafo ) alla funzione ch econtrolla se ha cicli
+        # verifico che il grafo attuale non contenga cicli
         if ha_cicli(selected):
-            # ha cicli quindi lo rimuovo
+            # ha cicli, quindi lo rimuovo
             selected.pop(-1)
-
-
-
-
-
 
 
 # ----MAIN
@@ -376,7 +377,7 @@ if __name__ == '__main__':
         print("SCENARIO - NUM_SENSORI/COSTO: ")
         print_scenario(sens_dict_ord_by_num_sensori)
 
-    result=greedy_optimization(sensors, sens_dict_ord_by_cap)
+    result = greedy_optimization(sensors, sens_dict_ord_by_cap)
     greedy_optimization(sensors, sens_dict_ord_by_num_sensori)
 
     greedy_optimization(sensors, sens_dict_ord_by_cap, pack_by="capacita")
