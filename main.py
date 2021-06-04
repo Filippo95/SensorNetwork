@@ -6,7 +6,7 @@ import math
 from matplotlib import pyplot as plt
 import pprint
 
-random_seed = 1625  # Per la riproducibilità degli esempi
+random_seed = 12345  # Per la riproducibilità degli esempi
 # Il seed originale è 1625
 
 max_x = 1200  # longitudine massima
@@ -21,8 +21,8 @@ class Sensor:
         self.id = an_id
         self.longitudine = rn.uniform(0, max_x)
         self.latitudine = rn.uniform(0, max_y)
-        self.portata = rn.uniform(50, 150)
-        self.send_rate = rn.randint(1, 10)
+        self.portata = rn.uniform(50, 150)#distaza raggio di copertura
+        self.send_rate = rn.randint(1, 10)# quanti msg
         self.send_rate_unit = "msg/s"
 
 
@@ -81,6 +81,14 @@ def find_best_gateway(capacita):
         else:
             return gw
 
+    return gateways[-1]
+
+
+
+
+
+
+
 
 # array di sensori
 sensors = []
@@ -133,7 +141,36 @@ def print_scenario(a_dict):
     print("\n\n")
 
 
-def greedy_optimization(sensors, sens_dict_ordered):
+def find_covered(sensor,capacita_to_cover, senders, capacita_gateway, find_by="distanza_capacita"):
+    selected = []
+
+    for sender in senders:
+
+        if find_by == "capacita":
+            sender.criterio = sender.send_rate
+        else :
+            distanza = distance(sensor, sender)
+            if distanza == 0:
+                distanza = 0.0001
+            sender.criterio = sender.send_rate / distanza  # vogliamo prioritizzare i sensori che hanno raggio molto piccolo e capacità molto grande quindi tra quelli più vicini con send_rate più grande
+
+    senders = sorted(senders,
+                                    key=lambda item: item.criterio,
+                                    reverse=True)#in ordine decrescente
+    capacita_coperta=0
+
+    while len(senders) > 0:
+        #prendo il primo elemento di senders ordinato per il criterio e controllo che ci stia
+        if senders[0].send_rate+capacita_coperta <= capacita_gateway:
+            capacita_coperta += senders[0].send_rate #aggiungo all'accumulatore
+            selected.append(senders[0]) #aggiungo ai coperti
+        senders.remove(senders[0]) #elimino dai possibili coperti
+
+
+    return selected
+
+
+def greedy_optimization(sensors, sens_dict_ordered, pack_by="distanza_capacita"):
     # Seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
     # (o rapporto numsensori/costo maggiore)
     selected = {}
@@ -142,17 +179,29 @@ def greedy_optimization(sensors, sens_dict_ordered):
     i = 0
     while len(sens_dict_ordered) > 0:
         (where, temp_val) = list(sens_dict_ordered.items())[0]
-        which_covered = temp_val["senders"]
+
         which_gateway = find_best_gateway(temp_val["tot_capacita"])
+
+        if temp_val["tot_capacita"]>which_gateway.capacita:
+            which_covered = find_covered(where,temp_val["tot_capacita"],temp_val["senders"],which_gateway.capacita,pack_by)
+        else:
+            which_covered = temp_val["senders"]
+
+        # creo una array per la stampa dei sensori coperti
+        arr=[]
+        for sensor in which_covered:
+            arr.append(sensor.id)
+
         selected[i] = {
-            "location": {
+            "gateway": {
                 "sensor_id": where.id,
                 "latitudine": where.latitudine,
-                "longitudine": where.longitudine
-            },
-            "selected_gateway": {
+                "longitudine": where.longitudine,
+
                 "classe": which_gateway.id,
-                "costo": which_gateway.costo
+                "costo": which_gateway.costo,
+                "sensor_covered": arr
+
             }
         }
         costo_totale += which_gateway.costo
@@ -264,6 +313,9 @@ if __name__ == '__main__':
 
     greedy_optimization(sensors, sens_dict_ord_by_cap)
     greedy_optimization(sensors, sens_dict_ord_by_num_sensori)
+
+    greedy_optimization(sensors, sens_dict_ord_by_cap, pack_by="capacita")
+    greedy_optimization(sensors, sens_dict_ord_by_num_sensori, pack_by="capacita")
 
     ax.set_aspect('equal', anchor="C")
     ax.set_xbound(lower=0.0, upper=max_x)
