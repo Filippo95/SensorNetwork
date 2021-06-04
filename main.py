@@ -37,6 +37,9 @@ class Gateway:
         self.capacita_elab_unit = "msg/s"
 
 
+
+
+
 # class Progetto:
 #    def __init__(self, num_sensori):
 #        self.num_sensori = num_sensori
@@ -239,6 +242,68 @@ def greedy_optimization(sensors, sens_dict_ordered, pack_by="distanza_capacita")
             print("Sono rimasti sensori da coprire. Nessuna soluzione ammissibile trovata!")
             print("\n")
             sys.stdout = original_stdout
+    return selected
+
+
+def distance_by_coord(sorgente, destinazione):
+    return math.sqrt((sorgente[0]-destinazione[0])**2+(sorgente[1]-destinazione[1])**2)
+
+#TODO implementare la funzione di visita in profondità
+def ha_cicli(selected):
+    #faccio una riceerca in profondità
+    visited = []
+    for arco in selected:
+        if arco["source"] in visited:
+            return True
+        else:
+            visited.append(arco["source"])
+            ha_cicli(selected.pop())
+
+#TODO metodo che ritorna true o false
+# True se esiste un arco in edges che va da destinationa soruce
+# False se non esiste un arco in edges che va da destination a source
+def esiste_reverse(edges, source, destination):
+    return True
+
+
+def minimum_spanning_tree(result):
+    vertices = []#i nodi del grafo
+    edges = []#gli archi del grafo
+
+    for gateway in result:
+        vertices.append(gateway)
+        temp_result=result.copy() # creo una copia deel dizionario in modo da poi eliminare l'elemeento attuale
+        temp_result.pop(gateway)
+        for node in temp_result:
+            if not(esiste_reverse(edges, gateway,node)):
+                edges.append({
+                    "source": gateway,
+                    "destination": node,
+                    "costo": distance_by_coord((result.get(gateway)['latitudine'],result.get(gateway)['longitudine']),
+                                               (result.get(node)['latitudine'],result.get(node)['longitudine'])) * rn.uniform(0.5, 1.5)
+                })
+
+    #kruskal
+    #ordino gli archi per costo
+    edges = {k: v for k, v in sorted(edges.items(),
+                             key=lambda item: item[1]["costo"],
+                             reverse=False)}# dal più basso al più alto
+
+    # creo un arrray che contiene gli archi che ho selezionato
+    selected=[]
+    i=0
+    while len(edges)>0 and len(selected)<len(vertices)-1:
+        #aggiungo l'arco alla soluzione
+        selected.append(edges[0])
+        # passo la la suole (il grafo ) alla funzione ch econtrolla se ha cicli
+        if ha_cicli(selected):
+            # ha cicli quindi lo rimuovo
+            selected.pop(-1)
+
+
+
+
+
 
 
 # ----MAIN
@@ -311,11 +376,13 @@ if __name__ == '__main__':
         print("SCENARIO - NUM_SENSORI/COSTO: ")
         print_scenario(sens_dict_ord_by_num_sensori)
 
-    greedy_optimization(sensors, sens_dict_ord_by_cap)
+    result=greedy_optimization(sensors, sens_dict_ord_by_cap)
     greedy_optimization(sensors, sens_dict_ord_by_num_sensori)
 
     greedy_optimization(sensors, sens_dict_ord_by_cap, pack_by="capacita")
     greedy_optimization(sensors, sens_dict_ord_by_num_sensori, pack_by="capacita")
+
+    minimum_spanning_tree(result)
 
     ax.set_aspect('equal', anchor="C")
     ax.set_xbound(lower=0.0, upper=max_x)
