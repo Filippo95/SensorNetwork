@@ -3,14 +3,19 @@
 import sys
 import random as rn
 import math
+from math import sin, cos, sqrt, atan2, radians
+from folium import DivIcon
 from matplotlib import pyplot as plt
 import pprint
+import folium
 
 random_seed = 12345  # Per la riproducibilità degli esempi
 # Il seed originale è 1625
 
-max_x = 1200  # longitudine massima
-max_y = 800  # latitudine minima
+max_x = 12  # longitudine massima est
+min_x = 11  #ovest
+max_y = 45  # latitudine minima nord
+min_y = 44  #sud
 
 rn.seed(random_seed)
 
@@ -19,9 +24,9 @@ rn.seed(random_seed)
 class Sensor:
     def __init__(self, an_id):
         self.id = an_id
-        self.longitudine = rn.uniform(0, max_x)
-        self.latitudine = rn.uniform(0, max_y)
-        self.portata = rn.uniform(50, 150)  # distanza raggio di copertura
+        self.longitudine = rn.uniform(min_x, max_x)
+        self.latitudine = rn.uniform(min_y, max_y)
+        self.portata = rn.uniform(5000, 15000)  # distanza raggio di copertura
         self.send_rate = rn.randint(1, 10)  # quanti msg
         self.send_rate_unit = "msg/s"
 
@@ -63,11 +68,30 @@ def find_senders(a_sensor):
 # Prende in input due sensori e restituisce
 # la loro distanza euclidea
 def distance(sens_one, sens_two):
-    x_0 = sens_one.longitudine
-    y_0 = sens_one.latitudine
-    x_1 = sens_two.longitudine
-    y_1 = sens_two.latitudine
-    return math.sqrt((y_0 - y_1) ** 2 + (x_0 - x_1) ** 2)
+   # x_0 = sens_one.longitudine
+   # y_0 = sens_one.latitudine
+  #  x_1 = sens_two.longitudine
+  #  y_1 = sens_two.latitudine
+   # return math.sqrt((y_0 - y_1) ** 2 + (x_0 - x_1) ** 2)*0.9996
+   # approximate radius of earth in km
+   R = 6373.0
+
+   lat1 = radians(sens_one.latitudine)
+   lon1 = radians(sens_one.longitudine)
+   lat2 = radians(sens_two.latitudine)
+   lon2 = radians(sens_two.longitudine)
+
+   dlon = lon2 - lon1
+   dlat = lat2 - lat1
+
+   a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+   c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+   distance = R * c *1000
+   return distance
+
+   #print("Result:", distance)
+
 
 
 # Data una capacità da "coprire", trova il
@@ -306,6 +330,54 @@ def minimum_spanning_tree(result):
             # ha cicli, quindi lo rimuovo
             selected.pop(-1)
 
+def print_sensori(sensors):
+    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
+
+    for i in range(len(sensors)):
+        temp_sensor = sensors[i]
+        folium.Circle(
+            location=[temp_sensor.latitudine, temp_sensor.longitudine],
+            popup='id: '+str(temp_sensor.id) + 'lat: '+str(temp_sensor.latitudine) +'long: '+ str(temp_sensor.longitudine),
+            radius=float(temp_sensor.portata) ,
+            color='crimson',
+            fill=True,
+            fill_color='crimson'
+        ).add_to(m)
+    m.save('./1-sensors.html')
+
+
+def find_sensor_by_id(sensor):
+    for sen in sensors:
+        if sen.id == sensor:
+            return sen
+    return None
+
+
+def print_solution(solution):
+    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
+    for gateway in solution:
+        color = "#%06x" % rn.randint(0, 0xFFFFFF)
+        folium.Marker(
+            location=[solution.get(gateway)['latitudine'], solution.get(gateway)['longitudine']],
+            popup='id: '+str(solution.get(gateway)['sensor_id'])+
+                  ' latitudine: '+str(solution.get(gateway)['latitudine'])+
+                  ' longitudine: '+str(solution.get(gateway)['longitudine'])+
+                  ' sensori coperti: '+str(solution.get(gateway)['sensor_covered']),
+        ).add_to(m)
+        for sensor in solution.get(gateway)['sensor_covered']:
+            sensore = find_sensor_by_id(sensor)
+            folium.Circle(
+                location=[sensore.latitudine, sensore.longitudine],
+                popup='id: '+str(sensore.id) + ' lat: '+str(sensore.latitudine) +' long: '+ str(sensore.longitudine),
+                radius=float(sensore.portata) ,
+                color=str(color),
+                labels=str(sensore.id),
+                fill=True,
+                fill_color=str(color)
+            ).add_to(m)
+
+    m.save('./2-solution.html')
+
 
 # ----MAIN
 if __name__ == '__main__':
@@ -377,12 +449,14 @@ if __name__ == '__main__':
         print("SCENARIO - NUM_SENSORI/COSTO: ")
         print_scenario(sens_dict_ord_by_num_sensori)
 
+    print_sensori(sensors)
     result = greedy_optimization(sensors, sens_dict_ord_by_cap)
-    greedy_optimization(sensors, sens_dict_ord_by_num_sensori)
+    #greedy_optimization(sensors, sens_dict_ord_by_num_sensori)
 
-    greedy_optimization(sensors, sens_dict_ord_by_cap, pack_by="capacita")
-    greedy_optimization(sensors, sens_dict_ord_by_num_sensori, pack_by="capacita")
+    #greedy_optimization(sensors, sens_dict_ord_by_cap, pack_by="capacita")
+    #greedy_optimization(sensors, sens_dict_ord_by_num_sensori, pack_by="capacita")
 
+    print_solution(result)
     minimum_spanning_tree(result)
 
     ax.set_aspect('equal', anchor="C")
