@@ -1,21 +1,20 @@
-# Progetto Ricerca Operativa - n.46 "Sensor Network"
+# Progetto Ricerca Operativa - n.46 "Sensor Network" - A.A. 2020-21
 # Andrea Benini, Giacomo Bettini, Filippo Luppi
 import sys
 import random as rn
-import math
 from math import sin, cos, sqrt, atan2, radians
-from folium import DivIcon
 from matplotlib import pyplot as plt
-import pprint
 import folium
+import pprint
+from deprecated import deprecated
 
-random_seed = 12345  # Per la riproducibilità degli esempi
+random_seed = 1625  # Per la riproducibilità degli esempi
 # Il seed originale è 1625
 
 max_x = 12  # longitudine massima est
-min_x = 11  #ovest
+min_x = 11  # ovest
 max_y = 45  # latitudine minima nord
-min_y = 44  #sud
+min_y = 44  # sud
 
 rn.seed(random_seed)
 
@@ -48,16 +47,14 @@ class Gateway:
 
 # Questa funzione, dato un sensore in input, trova tutti i sensori
 # che possono trasmettergli dati.
-# !!!!!!! Forse conviene tenere il fatto di essere in range di sè stessi,
-# visto che comunque prima o poi dovremo considerare la capacità anche
-# del sensore stesso, se installiamo un dispositivo presso di lui.
-# Vale anche nel caso in cui non ci sia nessun sender che gli manda dati !!!!!!!
-# Per ora ho tolto questo check, poi vedremo eventualmente se rimetterlo
-def find_senders(a_sensor):
+# Viene considerato anche il sensore stesso.
+def find_senders(a_sensor, sensor_list=None):
     global sensors
+    if sensor_list is None:
+        sensor_list = sensors
     senders = []
 
-    for this_sens in sensors:
+    for this_sens in sensor_list:
         this_dist = distance(a_sensor, this_sens)
         if this_dist <= this_sens.portata:
             senders.append(this_sens)
@@ -65,38 +62,44 @@ def find_senders(a_sensor):
     return senders
 
 
+# Inutilizzato.
+# Creato in origine per calcolare la distanza in 2D, ora si usa
+# un metodo più preciso che tiene conto della curvatura terrestre.
+@deprecated(reason="Utilizzare il metodo distance(), che tiene conto della curvatura terrestre")
+def distance_in_2d(sens_one, sens_two):
+    x_0 = sens_one.longitudine
+    y_0 = sens_one.latitudine
+    x_1 = sens_two.longitudine
+    y_1 = sens_two.latitudine
+    return sqrt((y_0 - y_1) ** 2 + (x_0 - x_1) ** 2)
+
+
 # Prende in input due sensori e restituisce
-# la loro distanza euclidea
+# la loro distanza sulla superficie terrestre
 def distance(sens_one, sens_two):
-   # x_0 = sens_one.longitudine
-   # y_0 = sens_one.latitudine
-  #  x_1 = sens_two.longitudine
-  #  y_1 = sens_two.latitudine
-   # return math.sqrt((y_0 - y_1) ** 2 + (x_0 - x_1) ** 2)*0.9996
-   # approximate radius of earth in km
-   R = 6373.0
+    # Approssimazione del raggio della Terra in Km
+    raggio_terra = 6373.0
 
-   lat1 = radians(sens_one.latitudine)
-   lon1 = radians(sens_one.longitudine)
-   lat2 = radians(sens_two.latitudine)
-   lon2 = radians(sens_two.longitudine)
+    lat1 = radians(sens_one.latitudine)
+    lon1 = radians(sens_one.longitudine)
+    lat2 = radians(sens_two.latitudine)
+    lon2 = radians(sens_two.longitudine)
 
-   dlon = lon2 - lon1
-   dlat = lat2 - lat1
+    diff_lon = lon2 - lon1
+    diff_lat = lat2 - lat1
 
-   a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-   c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    a = sin(diff_lat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(diff_lon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
 
-   distance = R * c *1000
-   return distance
-
-   #print("Result:", distance)
-
+    distanza = raggio_terra * c * 1000
+    return distanza
 
 
 # Data una capacità da "coprire", trova il
 # dispositivo/gateway con costo minore possibile
-# che la copra interamente
+# che la copra interamente, oppure, se non ne
+# esiste uno che possa farlo, restituisce il
+# dispositivo con capacità massima
 def find_best_gateway(capacita):
     global gateways
     for gw in gateways:
@@ -108,6 +111,10 @@ def find_best_gateway(capacita):
     return gateways[-1]
 
 
+# -----------------------------------
+# VARIABILI GLOBALI
+# -----------------------------------
+
 # array di sensori
 sensors = []
 
@@ -115,14 +122,14 @@ sensors = []
 gateways = []
 
 
-# Questa funzione dato l'array di sensori calcola un dizionario ordinato per il parametro order_by.
+# Questa funzione, dato l'array di sensori, crea un dizionario ordinato secondo il parametro order_by.
 def calcola_scenario(order_by="rapp_cap_costo", sensor_list=None):
     global sensors
     if sensor_list is None:
         sensor_list = sensors
     sens_dictionary = {}
     for this_sens in sensor_list:
-        this_senders = find_senders(this_sens)
+        this_senders = find_senders(this_sens, sensor_list)
         tot_capacita = 0
         num_sensori = len(this_senders)
         for temp_sens in this_senders:
@@ -133,7 +140,7 @@ def calcola_scenario(order_by="rapp_cap_costo", sensor_list=None):
                                       "tot_capacita": tot_capacita,
                                       "rapp_cap_costo": rapp_cap_costo,
                                       "rapp_numsensori_costo": rapp_numsensori_costo}
-        if verbose:
+        if more_verbose:
             print("\nIl sensore " + str(this_sens.id) + " è nel raggio di " + str(num_sensori) + " sensori," +
                   " che hanno una capacità totale di " + str(tot_capacita) + " " + this_sens.send_rate_unit)
 
@@ -163,7 +170,6 @@ def find_covered(sensor, capacita_to_cover, senders, capacita_gateway, find_by="
     selected = []
 
     for sender in senders:
-
         if find_by == "capacita":
             sender.criterio = sender.send_rate
         else:
@@ -176,6 +182,7 @@ def find_covered(sensor, capacita_to_cover, senders, capacita_gateway, find_by="
     senders = sorted(senders,
                      key=lambda item: item.criterio,
                      reverse=True)  # in ordine decrescente
+
     capacita_coperta = 0
 
     while len(senders) > 0:
@@ -226,10 +233,11 @@ def greedy_optimization(sensors, sens_dict_ordered, pack_by="distanza_capacita")
         for a_sensor in which_covered:
             if a_sensor in sensors_copy:
                 sensors_copy.remove(a_sensor)
-        print("\n ITERAZIONE: " + str(i - 1))
-        for temp in sensors_copy:
-            print(temp.id, end=',')
-        print("\n")
+        if not quiet:
+            print("\nITERAZIONE: " + str(i - 1))
+            for temp in sensors_copy:
+                print(temp.id, end=',')
+            print("\n")
 
         # aggiorno lo scenario dopo l'assegnazione, e dopo aver rimosso quelli già assegnati
         sens_dict_ordered = calcola_scenario(sensor_list=sensors_copy)
@@ -257,8 +265,11 @@ def greedy_optimization(sensors, sens_dict_ordered, pack_by="distanza_capacita")
     return selected
 
 
+# TODO Qui dovremo implementare la distanza come viene misurata sulla Terra, invece che in 2D?
+# (Intendo come definito nell'altro metodo creato da Fil)
+# Prende in input due tuple di coordinate e ne resituisce la distanza euclidea
 def distance_by_coord(sorgente, destinazione):
-    return math.sqrt((sorgente[0] - destinazione[0]) ** 2 + (sorgente[1] - destinazione[1]) ** 2)
+    return sqrt((sorgente[0] - destinazione[0]) ** 2 + (sorgente[1] - destinazione[1]) ** 2)
 
 
 # TODO implementare la funzione di visita in profondità
@@ -330,15 +341,17 @@ def minimum_spanning_tree(result):
             # ha cicli, quindi lo rimuovo
             selected.pop(-1)
 
+
 def print_sensori(sensors):
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
 
     for i in range(len(sensors)):
         temp_sensor = sensors[i]
         folium.Circle(
-            location=[temp_sensor.latitudine, temp_sensor.longitudine],
-            popup='id: '+str(temp_sensor.id) + 'lat: '+str(temp_sensor.latitudine) +'long: '+ str(temp_sensor.longitudine),
-            radius=float(temp_sensor.portata) ,
+            location=(temp_sensor.latitudine, temp_sensor.longitudine),
+            popup='id: ' + str(temp_sensor.id) + 'lat: ' + str(temp_sensor.latitudine) + 'long: ' + str(
+                temp_sensor.longitudine),
+            radius=float(temp_sensor.portata),
             color='crimson',
             fill=True,
             fill_color='crimson'
@@ -353,23 +366,24 @@ def find_sensor_by_id(sensor):
     return None
 
 
-def print_solution(solution):
+def display_solution(solution):
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
     for gateway in solution:
         color = "#%06x" % rn.randint(0, 0xFFFFFF)
         folium.Marker(
             location=[solution.get(gateway)['latitudine'], solution.get(gateway)['longitudine']],
-            popup='id: '+str(solution.get(gateway)['sensor_id'])+
-                  ' latitudine: '+str(solution.get(gateway)['latitudine'])+
-                  ' longitudine: '+str(solution.get(gateway)['longitudine'])+
-                  ' sensori coperti: '+str(solution.get(gateway)['sensor_covered']),
+            popup='id: ' + str(solution.get(gateway)['sensor_id']) +
+                  ' latitudine: ' + str(solution.get(gateway)['latitudine']) +
+                  ' longitudine: ' + str(solution.get(gateway)['longitudine']) +
+                  ' sensori coperti: ' + str(solution.get(gateway)['sensor_covered']),
         ).add_to(m)
         for sensor in solution.get(gateway)['sensor_covered']:
             sensore = find_sensor_by_id(sensor)
             folium.Circle(
-                location=[sensore.latitudine, sensore.longitudine],
-                popup='id: '+str(sensore.id) + ' lat: '+str(sensore.latitudine) +' long: '+ str(sensore.longitudine),
-                radius=float(sensore.portata) ,
+                location=(sensore.latitudine, sensore.longitudine),
+                popup='id: ' + str(sensore.id) + ' lat: ' + str(sensore.latitudine) + ' long: ' + str(
+                    sensore.longitudine),
+                radius=float(sensore.portata),
                 color=str(color),
                 labels=str(sensore.id),
                 fill=True,
@@ -377,6 +391,56 @@ def print_solution(solution):
             ).add_to(m)
 
     m.save('./2-solution.html')
+
+
+# Inutilizzato.
+# Metodo creato in origine per plottare il nostro scenario, ora si
+# utilizza la rappresentazione tramite mappa (pacchetto folium).
+# I raggi dei sensori non saranno disegnati correttamente.
+@deprecated(reason="Utilizzare il metodo display_solution()")
+def plot_graph_old():
+    global sensors
+    x = []
+    y = []
+    colors = []
+    labels = []
+
+    ax = plt.axes(xlim=(0, max_x), ylim=(0, max_y))
+    for (index, a_sens) in enumerate(sensors):
+        x.append(a_sens.longitudine)
+        y.append(a_sens.latitudine)
+
+        radius = a_sens.portata
+
+        colors.append(a_sens.id)
+
+        if verbose:
+            center = "center: x={} y={}".format(round(a_sens.longitudine), round(a_sens.latitudine))
+            coords = "range: x={}-{} | y={}-{}".format(round(a_sens.longitudine - radius),
+                                                       round(a_sens.longitudine + radius),
+                                                       round(a_sens.latitudine - radius),
+                                                       round(a_sens.latitudine + radius))
+            labels.append("id={} r={}\n{}\n{}".format(a_sens.id, round(radius), center, coords))
+        elif quiet:
+            labels.append("{}".format(a_sens.id))
+        else:
+            labels.append("id:{} r={}".format(a_sens.id, round(radius)))
+
+        ax.add_artist(plt.Circle((a_sens.longitudine, a_sens.latitudine), radius,
+                                 color=plt.cm.get_cmap(color_map_name).colors[i * round(256 / num_sensori)],
+                                 fill=True, alpha=0.5))  # Disegna i raggi dei sensori
+
+    ax.scatter(x, y, c=colors, s=5, cmap=color_map_name, alpha=1.0)  # Disegna i centri dei sensori
+
+    for x_pos, y_pos, label in zip(x, y, labels):
+        ax.annotate(label, xy=(x_pos, y_pos), xytext=(7, 0), textcoords='offset points',
+                    ha='left', va='center')
+
+    ax.set_aspect('equal', anchor="C")
+    ax.set_xbound(lower=min_x, upper=max_x)
+    ax.set_ybound(lower=min_y, upper=max_y)
+    plt.grid()
+    plt.show()
 
 
 # ----MAIN
@@ -387,6 +451,7 @@ if __name__ == '__main__':
     num_sensori = 50
     color_map_name = "viridis"
     verbose = len(sys.argv) > 1 and "-v" in sys.argv
+    more_verbose = len(sys.argv) > 1 and "-vv" in sys.argv
     quiet = len(sys.argv) > 1 and "-q" in sys.argv
 
     for i in range(num_sensori):
@@ -400,43 +465,8 @@ if __name__ == '__main__':
     gateways.append(Gateway(4, 32, 32))
     gateways.append(Gateway(5, 40, 40))
 
-    x = []
-    y = []
-    colors = []
-    labels = []
-
-    ax = plt.axes(xlim=(0, max_x), ylim=(0, max_y))
-    for i in range(len(sensors)):
-        x.append(sensors[i].longitudine)
-        y.append(sensors[i].latitudine)
-
-        radius = sensors[i].portata
-
-        colors.append(sensors[i].id)
-
-        if verbose:
-            center = "center: x={} y={}".format(round(sensors[i].longitudine), round(sensors[i].latitudine))
-            coords = "range: x={}-{} | y={}-{}".format(round(sensors[i].longitudine - radius),
-                                                       round(sensors[i].longitudine + radius),
-                                                       round(sensors[i].latitudine - radius),
-                                                       round(sensors[i].latitudine + radius))
-            labels.append("id={} r={}\n{}\n{}".format(sensors[i].id, round(radius), center, coords))
-        elif quiet:
-            labels.append("{}".format(sensors[i].id))
-        else:
-            labels.append("id:{} r={}".format(sensors[i].id, round(radius)))
-
-        ax.add_artist(plt.Circle((sensors[i].longitudine, sensors[i].latitudine), radius,
-                                 color=plt.cm.get_cmap(color_map_name).colors[i * round(256 / num_sensori)],
-                                 fill=True, alpha=0.5))  # Disegna i "raggi" dei sensori
-
-    ax.scatter(x, y, c=colors, s=5, cmap=color_map_name, alpha=1.0)  # Disegna i "centri" dei sensori
-
-    for x_pos, y_pos, label in zip(x, y, labels):
-        ax.annotate(label, xy=(x_pos, y_pos), xytext=(7, 0), textcoords='offset points',
-                    ha='left', va='center')
     # -----------------------------------
-    # ANALISI (???)
+    # COSTRUZIONE DELLO SCENARIO
     # -----------------------------------
 
     # calcola l'insieme dei sensori con le relative proprietà
@@ -451,16 +481,20 @@ if __name__ == '__main__':
 
     print_sensori(sensors)
     result = greedy_optimization(sensors, sens_dict_ord_by_cap)
-    #greedy_optimization(sensors, sens_dict_ord_by_num_sensori)
+    # greedy_optimization(sensors, sens_dict_ord_by_num_sensori)
 
-    #greedy_optimization(sensors, sens_dict_ord_by_cap, pack_by="capacita")
-    #greedy_optimization(sensors, sens_dict_ord_by_num_sensori, pack_by="capacita")
+    # greedy_optimization(sensors, sens_dict_ord_by_cap, pack_by="capacita")
+    # greedy_optimization(sensors, sens_dict_ord_by_num_sensori, pack_by="capacita")
 
-    print_solution(result)
+    display_solution(result)
     minimum_spanning_tree(result)
 
-    ax.set_aspect('equal', anchor="C")
-    ax.set_xbound(lower=0.0, upper=max_x)
-    ax.set_ybound(lower=0.0, upper=max_y)
-    plt.grid()
-    plt.show()
+    # TODO Considerare queste idee:
+    # 1) Una funzione che fa il "test di ammissibilità", ossia che data una soluzione fa tutti i controlli
+    # per verificare se i vincoli sono stati rispettati (single demand, capacità massima dei dispositivi, ...)
+    # 2) Aggiungere come criterio nella greedy non solo il massimo rapporto capacità/costo,
+    # ma anche un ulteriore valore che considera quanti sensori sto coprendo, ossia: se ho un solo sensore di
+    # capacità 8 e un gateway di capacità 8, il rapporto capacità/costo è 1.0 (il massimo). Però vorrei mettere
+    # in testa al nostro dizionario di siti da considerare quelli che hanno un rapporto capacità/costo elevato
+    # e che contemporaneamente coprono molti sensori, così "sfoltisco" il prima possibile i siti molto densi.
+    # E' un po' una combinazione del rapporto capacità/costo e numsensori/costo.
