@@ -281,6 +281,12 @@ def find_reachable_vertices(edge_list, a_vertex):
     return reachable_vertices
 
 
+# opened_vertices avrà la seguente struttura:
+# opened_vertices = [{
+#   "vertex": id del vertice (ossia gateway) che è stato aperto,
+#   "parent": chi ha aperto questo vertice
+# }]
+# TODO finire di implementare questa funzione: un nodo deve ricordarsi da chi è stato aperto.
 def depth_first_visit(edge_list, this_vertex, visited_vertices, parent, opened_vertices, vertices_left):
     visited_vertices.append(this_vertex)
     vertices_left.remove(this_vertex)
@@ -290,33 +296,46 @@ def depth_first_visit(edge_list, this_vertex, visited_vertices, parent, opened_v
     # Per ogni vertice raggiungibile, se non è già stato aperto, lo aggiungo in testa
     # alla lista dei vertici aperti
     for a_vertex in vertici_raggiungibili:
-        if a_vertex not in opened_vertices:
-            opened_vertices.insert(0, a_vertex)
+        temp_vertex_list = [item["vertex"] for item in opened_vertices]
+        if a_vertex not in temp_vertex_list:
+            opened_vertices.insert(0, {
+                "vertex": a_vertex,
+                "parent": this_vertex
+            })
 
     # Rimuovo il parent per evitare di visitarlo di nuovo
-    if parent in opened_vertices:
-        opened_vertices.remove(parent)
+    temp_parent_list = [item["parent"] for item in opened_vertices]
+    if parent in temp_parent_list:
+        for i in opened_vertices:
+            if i["vertex"] == parent:
+                opened_vertices.remove(i)
 
     # Verifico se fra i vertici raggiungibili c'è uno dei vertici già visitati,
     # senza considerare il vertice dal quale provengo (ossia parent), se ciò è
     # verificato, allora ho trovato un ciclo
-    for a_vertex in vertici_raggiungibili:
-        if a_vertex in visited_vertices and a_vertex != parent:
-            return True
+    temp_vertex_list = [item["vertex"] for item in opened_vertices]
+    for a_vertex in temp_vertex_list:
+        for i in opened_vertices:
+            if i["vertex"] == a_vertex:
+                if a_vertex in visited_vertices and a_vertex != i["parent"]:
+                    return True
+
     # Sennò proseguo la visita in profondità.
 
     # Può darsi che la lista di vertici aperti sia nulla, ad esempio in casi in cui ho
     # selezionato due archi che collegano due coppie di vertici diversi. Quindi devo controllare se
     # la lista dei vertici aperti è vuota, e in quel caso effettuare una nuova visita.
-    parent = this_vertex
     if len(opened_vertices) > 0:
-        next_vertex = opened_vertices[0]
+        next_vertex = opened_vertices[0]["vertex"]
         opened_vertices.pop(0)
     else:
         # Se sono riuscito a visitare tutti i nodi del grafo, non ho trovato nessun ciclo
         if len(vertices_left) == 0:
             return False
-        next_vertex = vertices_left[0]
+        next_vertex = {
+            "vertex": vertices_left[0],
+            "parent": None
+        }
     return depth_first_visit(edge_list, next_vertex, visited_vertices, parent, opened_vertices, vertices_left)
 
 
@@ -400,6 +419,7 @@ def minimum_spanning_tree(result):
         print("{} - {} - {}".format(selected_edge["node_one"], selected_edge["node_two"], selected_edge["costo"]))
     return selected
 
+
 def print_sensori(sensors):
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
 
@@ -449,7 +469,9 @@ def display_solution(solution):
             ).add_to(m)
 
     m.save('./2-solution.html')
-def dispaly_mst(tree, soluzione):
+
+
+def display_mst(tree, soluzione):
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
 
     for index,gateway in enumerate(soluzione):
@@ -575,7 +597,7 @@ if __name__ == '__main__':
 
     display_solution(result)
     mst = minimum_spanning_tree(result)
-    dispaly_mst(mst, result)
+    display_mst(mst, result)
 
     # TODO Considerare queste idee:
     # 1) Una funzione che fa il "test di ammissibilità", ossia che data una soluzione fa tutti i controlli
