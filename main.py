@@ -8,7 +8,7 @@ from graph_functions import minimum_spanning_tree
 from utility_functions import print_scenario
 from greedy_functions import calcola_scenario, find_best_gateway, find_covered
 
-random_seed = 1629  # Per la riproducibilità degli esempi
+random_seed = 12345  # Per la riproducibilità degli esempi
 # Il seed originale è 1625
 rn.seed(random_seed)
 

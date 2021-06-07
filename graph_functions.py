@@ -11,44 +11,29 @@ def find_reachable_vertices(edge_list, a_vertex):
     return reachable_vertices
 
 
-# opened_vertices avrà la seguente struttura:
-# opened_vertices = [{
-#   "vertex": id del vertice (ossia gateway) che è stato aperto,
-#   "parent": chi ha aperto questo vertice
-# }]
-# TODO finire di implementare questa funzione: un nodo deve ricordarsi da chi è stato aperto.
-def depth_first_visit(edge_list, this_vertex, visited_vertices, parent, opened_vertices, vertices_left):
+def depth_first_visit(edge_list, this_vertex, visited_vertices, opened_vertices, vertices_left):
     visited_vertices.append(this_vertex)
-    vertices_left.remove(this_vertex)
+    vertices_left.remove(this_vertex["vertex"])
 
     # Trovo i vertici raggiungibili partendo dal vertice attuale
-    vertici_raggiungibili = find_reachable_vertices(edge_list, this_vertex)
-    # Per ogni vertice raggiungibile, se non è già stato aperto, lo aggiungo in testa
-    # alla lista dei vertici aperti
+    vertici_raggiungibili = find_reachable_vertices(edge_list, this_vertex["vertex"])
+    # Per ogni vertice raggiungibile, se non è già stato aperto e se non è il genitore di questo vertice,
+    # lo aggiungo in testa alla lista dei vertici aperti
+    temp_vertex_list = [item["vertex"] for item in opened_vertices]
     for a_vertex in vertici_raggiungibili:
-        temp_vertex_list = [item["vertex"] for item in opened_vertices]
-        if a_vertex not in temp_vertex_list:
+        if a_vertex not in temp_vertex_list and a_vertex != this_vertex["parent"]:
             opened_vertices.insert(0, {
                 "vertex": a_vertex,
-                "parent": this_vertex
+                "parent": this_vertex["vertex"]
             })
 
-    # Rimuovo il parent per evitare di visitarlo di nuovo
-    temp_parent_list = [item["parent"] for item in opened_vertices]
-    if parent in temp_parent_list:
-        for i in opened_vertices:
-            if i["vertex"] == parent:
-                opened_vertices.remove(i)
-
-    # Verifico se fra i vertici raggiungibili c'è uno dei vertici già visitati,
-    # senza considerare il vertice dal quale provengo (ossia parent), se ciò è
-    # verificato, allora ho trovato un ciclo
+    # Verifico se fra i vertici raggiungibili (a parte il parent, che non viene inserito)
+    # c'è uno dei vertici già visitati, se ciò è verificato, allora ho trovato un ciclo
     temp_vertex_list = [item["vertex"] for item in opened_vertices]
+    visited_vertices_list = [item["vertex"] for item in visited_vertices]
     for a_vertex in temp_vertex_list:
-        for i in opened_vertices:
-            if i["vertex"] == a_vertex:
-                if a_vertex in visited_vertices and a_vertex != i["parent"]:
-                    return True
+        if a_vertex in visited_vertices_list:
+            return True
 
     # Sennò proseguo la visita in profondità.
 
@@ -56,7 +41,7 @@ def depth_first_visit(edge_list, this_vertex, visited_vertices, parent, opened_v
     # selezionato due archi che collegano due coppie di vertici diversi. Quindi devo controllare se
     # la lista dei vertici aperti è vuota, e in quel caso effettuare una nuova visita.
     if len(opened_vertices) > 0:
-        next_vertex = opened_vertices[0]["vertex"]
+        next_vertex = opened_vertices[0]
         opened_vertices.pop(0)
     else:
         # Se sono riuscito a visitare tutti i nodi del grafo, non ho trovato nessun ciclo
@@ -66,7 +51,7 @@ def depth_first_visit(edge_list, this_vertex, visited_vertices, parent, opened_v
             "vertex": vertices_left[0],
             "parent": None
         }
-    return depth_first_visit(edge_list, next_vertex, visited_vertices, parent, opened_vertices, vertices_left)
+    return depth_first_visit(edge_list, next_vertex, visited_vertices, opened_vertices, vertices_left)
 
 
 def ha_cicli(edge_list):
@@ -78,8 +63,12 @@ def ha_cicli(edge_list):
             vertices_to_visit.append(n1)
         if n2 not in vertices_to_visit:
             vertices_to_visit.append(n2)
+    starting_vertex = {
+        "vertex": edge_list[0]["node_one"],
+        "parent": None
+    }
 
-    return depth_first_visit(edge_list, edge_list[0]["node_one"], [], None, [], vertices_to_visit)
+    return depth_first_visit(edge_list, starting_vertex, [], [], vertices_to_visit)
 
 
 def esiste_arco(edges, node_one, node_two):
