@@ -8,7 +8,7 @@ import folium
 import pprint
 from deprecated import deprecated
 
-random_seed = 1625  # Per la riproducibilità degli esempi
+random_seed = 1629  # Per la riproducibilità degli esempi
 # Il seed originale è 1625
 
 max_x = 12  # longitudine massima est
@@ -361,7 +361,7 @@ def minimum_spanning_tree(result):
                     "costo": distance_by_coord((result.get(gateway)['latitudine'],  # Vengono passate delle tuple
                                                 result.get(gateway)['longitudine']),  # di coordinate
                                                (result.get(node)['latitudine'],
-                                                result.get(node)['longitudine'])) * rn.uniform(0.75, 1.25)
+                                                result.get(node)['longitudine']))# * rn.uniform(0.75, 1.25)
                     # La funzione costo è proporzionale alla distanza fra i due dispositivi,
                     # ma moltiplicata per un fattore casuale (per fare in modo che non dipenda
                     # esclusivamente dalla distanza)
@@ -377,7 +377,7 @@ def minimum_spanning_tree(result):
     edges = sorted(edges,
                    key=lambda item: item["costo"],
                    reverse=False)  # dal più basso al più alto
-
+    print(edges)
     # creo un array che contiene gli archi che ho selezionato
     selected = []
     while len(edges) > 0 and len(selected) < len(vertices) - 1:
@@ -398,7 +398,7 @@ def minimum_spanning_tree(result):
     print("Archi selezionati per il MST:")
     for selected_edge in selected:
         print("{} - {} - {}".format(selected_edge["node_one"], selected_edge["node_two"], selected_edge["costo"]))
-
+    return selected
 
 def print_sensori(sensors):
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
@@ -449,7 +449,36 @@ def display_solution(solution):
             ).add_to(m)
 
     m.save('./2-solution.html')
+def dispaly_mst(tree, soluzione):
+    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
 
+    for index,gateway in enumerate(soluzione):
+        color = "#%06x" % rn.randint(0, 0xFFFFFF)
+        folium.Marker(
+                location=[soluzione.get(gateway)['latitudine'], soluzione.get(gateway)['longitudine']],
+            icon = folium.DivIcon(
+                html=f"""<div style=" font-weight: bold; font-size: large;">{"{:.0f}".format(index)}</div>"""),
+                popup='id: ' + str(index) +'<br>'
+                      ' latitudine: ' + str(soluzione.get(gateway)['latitudine']) +
+                      ' longitudine: ' + str(soluzione.get(gateway)['longitudine']) +
+                      ' sensori coperti: ' + str(soluzione.get(gateway)['sensor_covered']),
+        ).add_to(m)
+    for arco in tree:
+        id_gateway1 = arco["node_one"]
+        id_gateway2 = arco["node_two"]
+        gateway1 = soluzione[id_gateway1]
+        gateway2 = soluzione[id_gateway2]
+        loc = [(gateway1["latitudine"], gateway1["longitudine"]),
+               (gateway2["latitudine"], gateway2["longitudine"])]
+
+        folium.PolyLine(loc,
+                        color='red',
+                        weight=5,
+                        opacity=0.8).add_to(m)
+
+
+
+    m.save('./3-mst.html')
 
 # Inutilizzato.
 # Metodo creato in origine per plottare il nostro scenario, ora si
@@ -506,7 +535,7 @@ if __name__ == '__main__':
     # -----------------------------------
     # DEFINIZIONE DATI
     # -----------------------------------
-    num_sensori = 50
+    num_sensori = 10
     color_map_name = "viridis"
     verbose = len(sys.argv) > 1 and "-v" in sys.argv
     more_verbose = len(sys.argv) > 1 and "-vv" in sys.argv
@@ -545,7 +574,8 @@ if __name__ == '__main__':
     # greedy_optimization(sensors, sens_dict_ord_by_num_sensori, pack_by="capacita")
 
     display_solution(result)
-    minimum_spanning_tree(result)
+    mst = minimum_spanning_tree(result)
+    dispaly_mst(mst, result)
 
     # TODO Considerare queste idee:
     # 1) Una funzione che fa il "test di ammissibilità", ossia che data una soluzione fa tutti i controlli
