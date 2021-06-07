@@ -74,16 +74,15 @@ def distance_in_2d(sens_one, sens_two):
     return sqrt((y_0 - y_1) ** 2 + (x_0 - x_1) ** 2)
 
 
-# Prende in input due sensori e restituisce
-# la loro distanza sulla superficie terrestre
-def distance(sens_one, sens_two):
+# Prende in input due tuple di coordinate e restituisce la loro distanza sulla superficie terrestre
+def distance_by_coord(node_one, node_two):
     # Approssimazione del raggio della Terra in Km
     raggio_terra = 6373.0
 
-    lat1 = radians(sens_one.latitudine)
-    lon1 = radians(sens_one.longitudine)
-    lat2 = radians(sens_two.latitudine)
-    lon2 = radians(sens_two.longitudine)
+    lat1 = radians(node_one[0])
+    lon1 = radians(node_one[1])
+    lat2 = radians(node_two[0])
+    lon2 = radians(node_two[1])
 
     diff_lon = lon2 - lon1
     diff_lat = lat2 - lat1
@@ -93,6 +92,13 @@ def distance(sens_one, sens_two):
 
     distanza = raggio_terra * c * 1000
     return distanza
+
+
+# Prende in input due sensori e restituisce
+# la loro distanza sulla superficie terrestre
+def distance(sens_one, sens_two):
+    return distance_by_coord((sens_one.latitudine, sens_one.longitudine),
+                             (sens_two.latitudine, sens_two.longitudine))
 
 
 # Data una capacità da "coprire", trova il
@@ -265,31 +271,72 @@ def greedy_optimization(sensors, sens_dict_ordered, pack_by="distanza_capacita")
     return selected
 
 
-# TODO Qui dovremo implementare la distanza come viene misurata sulla Terra, invece che in 2D?
-# (Intendo come definito nell'altro metodo creato da Fil)
-# Prende in input due tuple di coordinate e ne resituisce la distanza euclidea
-def distance_by_coord(sorgente, destinazione):
-    return sqrt((sorgente[0] - destinazione[0]) ** 2 + (sorgente[1] - destinazione[1]) ** 2)
+def find_reachable_vertices(edge_list, a_vertex):
+    reachable_vertices = []
+    for edge in edge_list:
+        if edge["node_one"] == a_vertex:
+            reachable_vertices.append(edge["node_two"])
+        elif edge["node_two"] == a_vertex:
+            reachable_vertices.append(edge["node_one"])
+    return reachable_vertices
 
 
-# TODO implementare la funzione di visita in profondità
-# Si tratterà di una visita in profondità (Depth-First Search),
-# dove terrò in memoria i nodi che ho visitato, e se a un certo
-# punto della visita incontro un nodo già visitato, allora posso
-# concludere che il grafo contiene un ciclo. Bisogna però fare
-# attenzione: se visito il nodo A e poi il suo vicino B, il fatto
-# che visitando B io trovi nuovamente A non deve significare che
-# c'è un ciclo nel grafo; va quindi tenuto in memoria anche il
-# "parent", o il nodo che si è appena esplorato, per evitare
-# di incorrere in errori.
-def ha_cicli(selected):
-    return False
+def depth_first_visit(edge_list, this_vertex, visited_vertices, parent, opened_vertices, vertices_left):
+    visited_vertices.append(this_vertex)
+    vertices_left.remove(this_vertex)
+
+    # Trovo i vertici raggiungibili partendo dal vertice attuale
+    vertici_raggiungibili = find_reachable_vertices(edge_list, this_vertex)
+    # Per ogni vertice raggiungibile, se non è già stato aperto, lo aggiungo in testa
+    # alla lista dei vertici aperti
+    for a_vertex in vertici_raggiungibili:
+        if a_vertex not in opened_vertices:
+            opened_vertices.insert(0, a_vertex)
+
+    # Rimuovo il parent per evitare di visitarlo di nuovo
+    if parent in opened_vertices:
+        opened_vertices.remove(parent)
+
+    # Verifico se fra i vertici raggiungibili c'è uno dei vertici già visitati,
+    # senza considerare il vertice dal quale provengo (ossia parent), se ciò è
+    # verificato, allora ho trovato un ciclo
+    for a_vertex in vertici_raggiungibili:
+        if a_vertex in visited_vertices and a_vertex != parent:
+            return True
+    # Sennò proseguo la visita in profondità.
+
+    # Può darsi che la lista di vertici aperti sia nulla, ad esempio in casi in cui ho
+    # selezionato due archi che collegano due coppie di vertici diversi. Quindi devo controllare se
+    # la lista dei vertici aperti è vuota, e in quel caso effettuare una nuova visita.
+    parent = this_vertex
+    if len(opened_vertices) > 0:
+        next_vertex = opened_vertices[0]
+        opened_vertices.pop(0)
+    else:
+        # Se sono riuscito a visitare tutti i nodi del grafo, non ho trovato nessun ciclo
+        if len(vertices_left) == 0:
+            return False
+        next_vertex = vertices_left[0]
+    return depth_first_visit(edge_list, next_vertex, visited_vertices, parent, opened_vertices, vertices_left)
 
 
-def esiste_arco(edges, source, destination):
+def ha_cicli(edge_list):
+    vertices_to_visit = []
+    for an_edge in edge_list:
+        n1 = an_edge["node_one"]
+        n2 = an_edge["node_two"]
+        if n1 not in vertices_to_visit:
+            vertices_to_visit.append(n1)
+        if n2 not in vertices_to_visit:
+            vertices_to_visit.append(n2)
+
+    return depth_first_visit(edge_list, edge_list[0]["node_one"], [], None, [], vertices_to_visit)
+
+
+def esiste_arco(edges, node_one, node_two):
     for item in edges:
-        if (item["source"] == source and item["destination"] == destination) or \
-                (item["source"] == destination and item["destination"] == source):
+        if (item["node_one"] == node_one and item["node_two"] == node_two) or \
+                (item["node_one"] == node_two and item["node_two"] == node_one):
             return True
     return False
 
@@ -309,14 +356,15 @@ def minimum_spanning_tree(result):
                 # con il nodo attuale (cioè qualsiasi altro gateway), lo aggiungo al grafo (senza questo check avrei
                 # un multigrafo, noi invece vogliamo creare un grafo semplice)
                 edges.append({
-                    "source": gateway,
-                    "destination": node,
+                    "node_one": gateway,
+                    "node_two": node,
                     "costo": distance_by_coord((result.get(gateway)['latitudine'],  # Vengono passate delle tuple
                                                 result.get(gateway)['longitudine']),  # di coordinate
                                                (result.get(node)['latitudine'],
-                                                result.get(node)['longitudine'])) * rn.uniform(0.5, 1.5)
-                    # La funzione costo è proporzionale alla distanza fra i due dispositivi, ma moltiplicata
-                    # per un fattore casuale che varia fra i due estremi
+                                                result.get(node)['longitudine'])) * rn.uniform(0.75, 1.25)
+                    # La funzione costo è proporzionale alla distanza fra i due dispositivi,
+                    # ma moltiplicata per un fattore casuale (per fare in modo che non dipenda
+                    # esclusivamente dalla distanza)
                 })
 
     # Algoritmo di Kruskal:
@@ -337,9 +385,19 @@ def minimum_spanning_tree(result):
         # è sempre quello con costo minore)
         selected.append(edges[0])
         # verifico che il grafo attuale non contenga cicli
-        if ha_cicli(selected):
+        # Devo passare una copia del dizionario "selected" o la
+        # funzione modifica il dizionario originale
+        selected_copy = selected.copy()
+        if ha_cicli(selected_copy):
             # ha cicli, quindi lo rimuovo
             selected.pop(-1)
+        # in ogni caso, elimino l'arco appena considerato
+        edges.pop(0)
+
+    # Stampo gli archi selezionati
+    print("Archi selezionati per il MST:")
+    for selected_edge in selected:
+        print("{} - {} - {}".format(selected_edge["node_one"], selected_edge["node_two"], selected_edge["costo"]))
 
 
 def print_sensori(sensors):
