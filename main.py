@@ -7,10 +7,12 @@ import display_functions
 from graph_functions import minimum_spanning_tree
 from utility_functions import print_scenario
 from greedy_functions import calcola_scenario, find_best_gateway, find_covered
+from feasibility_functions import controlla_ammisibilita
+from math import ceil
+
 
 random_seed = 12345  # Per la riproducibilità degli esempi
 # Il seed originale è 1625
-rn.seed(random_seed)
 
 num_sensori = 50  # Quanti sensori generare
 
@@ -43,7 +45,7 @@ class Sensor:
 
 # definisco la classe di gateway
 class Gateway:
-    def __init__(self, an_id, costo, capacita):
+    def __init__(self, an_id, capacita, costo):
         self.id = an_id  # ID o "classe" del dispositivo
         self.longitudine = 0
         self.latitudine = 0
@@ -57,12 +59,16 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered, pack_by="distanza_
     # (o rapporto numsensori/costo maggiore)
     selected = {}
     sensors_copy = sensors.copy()
+    utilizzo_gateway = [0, 0, 0, 0, 0]
     costo_totale = 0
     i = 0
     while len(sens_dict_ordered) > 0:
         (where, temp_val) = list(sens_dict_ordered.items())[0]
 
         which_gateway = find_best_gateway(temp_val["tot_capacita"], gateways)
+        if which_gateway.id != 0:  # Ho disponibilità illimitata dei gateway di classe 0
+            gateways.remove(which_gateway)
+        utilizzo_gateway[which_gateway.id] += 1
 
         if temp_val["tot_capacita"] > which_gateway.capacita:
             which_covered = find_covered(where, temp_val["senders"], which_gateway.capacita, pack_by)
@@ -80,6 +86,7 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered, pack_by="distanza_
             "longitudine": where.longitudine,
             "classe": which_gateway.id,
             "costo": which_gateway.costo,
+            "max_capacity": which_gateway.capacita,
             "sensor_covered": arr
         }
         costo_totale += which_gateway.costo
@@ -98,6 +105,15 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered, pack_by="distanza_
 
         # aggiorno lo scenario dopo l'assegnazione, e dopo aver rimosso quelli già assegnati
         sens_dict_ordered = calcola_scenario(sensors_copy, gateways)
+
+    # Stampo l'utilizzo dei dispositivi per classe
+    print("\n\n\n")
+    print(f"Sono stati utilizzati:\n"
+          f"{utilizzo_gateway[0]} dispositivi di classe 0, costo totale {utilizzo_gateway[0] * 6}\n"
+          f"{utilizzo_gateway[1]} dispositivi di classe 1, costo totale {utilizzo_gateway[1] * 14}\n"
+          f"{utilizzo_gateway[2]} dispositivi di classe 2, costo totale {utilizzo_gateway[2] * 25}\n"
+          f"{utilizzo_gateway[3]} dispositivi di classe 3, costo totale {utilizzo_gateway[3] * 75}\n"
+          f"{utilizzo_gateway[4]} dispositivi di classe 4, costo totale {utilizzo_gateway[4] * 175}\n")
 
     # Stampo il dizionario che mostra dove e quali dispositivi ho installato
     print("\n\n\n")
@@ -124,10 +140,22 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered, pack_by="distanza_
 
 # ----MAIN
 if __name__ == '__main__':
+    # Come far partire il programma da riga di comando:
+    # python main.py [numsensori] [seed] [-v] [-vv] [-q]
+    # O passo sia il numero dei sensori sia il seed, oppure
+    # il programma utilizzerà entrambi i valori di default.
+
     # -----------------------------------
     # DEFINIZIONE DATI
     # -----------------------------------
     color_map_name = "viridis"
+
+    if len(sys.argv) > 2:
+        num_sensori = int(sys.argv[1])
+        random_seed = int(sys.argv[2])
+
+    rn.seed(random_seed)
+
     verbose = len(sys.argv) > 1 and "-v" in sys.argv
     more_verbose = len(sys.argv) > 1 and "-vv" in sys.argv
     quiet = len(sys.argv) > 1 and "-q" in sys.argv
@@ -137,11 +165,16 @@ if __name__ == '__main__':
 
     # Definiamo il listino dei dispositivi, ordinato
     # secondo le loro capacità massime
-    gateways.append(Gateway(1, 8, 8))
-    gateways.append(Gateway(2, 16, 16))
-    gateways.append(Gateway(3, 24, 24))
-    gateways.append(Gateway(4, 32, 32))
-    gateways.append(Gateway(5, 40, 40))
+    num_lowest_class = 500
+    gateways.append(Gateway(0, 8, 6))  # Gateway di classe 0: disponibilità limitata
+    for i in range(num_lowest_class):
+        gateways.append(Gateway(1, 15, 14))  # Gateway di classe 1
+    for i in range(ceil(num_lowest_class/5)):
+        gateways.append(Gateway(2, 25, 25))  # Gateway di classe 2
+    for i in range(ceil(num_lowest_class/25)):
+        gateways.append(Gateway(3, 50, 75))  # Gateway di classe 3
+    for i in range(ceil(num_lowest_class/125)):
+        gateways.append(Gateway(4, 100, 175))  # Gateway di classe 4
 
     # -----------------------------------
     # COSTRUZIONE DELLO SCENARIO
@@ -164,16 +197,30 @@ if __name__ == '__main__':
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_cap, pack_by="capacita")
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori, pack_by="capacita")
 
+    if controlla_ammisibilita(result, sensors):
+        print("\n\n\n-----------------LA SOLUZIONE TROVATA E' AMMISSIBILE-----------------\n\n\n")
+    else:
+        print("\n\n\n-----------------LA SOLUZIONE TROVATA !!!!!NON!!!!! E' AMMISSIBILE-----------------\n\n\n")
+
     display_functions.display_solution(result, sensors)
     mst = minimum_spanning_tree(result)
     display_functions.display_mst(mst, result)
+    display_functions.display_full_solution(mst, result, sensors)
 
-    # TODO Considerare queste idee:
-    # 1) Una funzione che fa il "test di ammissibilità", ossia che data una soluzione fa tutti i controlli
-    # per verificare se i vincoli sono stati rispettati (single demand, capacità massima dei dispositivi, ...)
-    # 2) Aggiungere come criterio nella greedy non solo il massimo rapporto capacità/costo,
+    # TODO: Aggiungere alla greedy il calcolo del minimum spanning tree
+    # La greedy deve poter cosiderare anche il costo di installare un dispositivo in un determinato sito in
+    # relazione al costo del minimum spanning tree.
+
+    # < Aggiungere come criterio nella greedy non solo il massimo rapporto capacità/costo,
     # ma anche un ulteriore valore che considera quanti sensori sto coprendo, ossia: se ho un solo sensore di
     # capacità 8 e un gateway di capacità 8, il rapporto capacità/costo è 1.0 (il massimo). Però vorrei mettere
     # in testa al nostro dizionario di siti da considerare quelli che hanno un rapporto capacità/costo elevato
     # e che contemporaneamente coprono molti sensori, così "sfoltisco" il prima possibile i siti molto densi.
-    # E' un po' una combinazione del rapporto capacità/costo e numsensori/costo.
+    # E' un po' una combinazione del rapporto capacità/costo e numsensori/costo. >
+
+    # TODO: Dimensionare correttamente il costo del Minimum Spanning Tree
+
+    # TODO: Test di ammissibilità
+    # Una funzione che fa il "test di ammissibilità", ossia che data una soluzione fa tutti i controlli
+    # per verificare se i vincoli sono stati rispettati:
+    # < 4) Qualche controllo sul minimum spanning tree? >

@@ -134,3 +134,57 @@ def display_mst(tree, soluzione):
                         opacity=0.8).add_to(m)
 
     m.save('./3-mst.html')
+
+
+def display_full_solution(tree, soluzione, sensors, dest_folder="./"):
+   m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
+   for index, gateway in enumerate(soluzione):
+       color = "#%06x" % rn.randint(0, 0xFFFFFF)
+       folium.Marker(
+           location=[soluzione.get(gateway)['latitudine'], soluzione.get(gateway)['longitudine']],
+           icon=folium.DivIcon(
+               html=f"""<div style=" font-weight: bold; font-size: large;">{"{:.0f}".format(index)}</div>"""),
+           popup='id: ' + str(index) + '<br>'
+                                       ' latitudine: ' + str(soluzione.get(gateway)['latitudine']) +
+                 ' longitudine: ' + str(soluzione.get(gateway)['longitudine']) +
+                 ' sensori coperti: ' + str(soluzione.get(gateway)['sensor_covered']),
+       ).add_to(m)
+   for arco in tree:
+       id_gateway1 = arco["node_one"]
+       id_gateway2 = arco["node_two"]
+       gateway1 = soluzione[id_gateway1]
+       gateway2 = soluzione[id_gateway2]
+       loc = [(gateway1["latitudine"], gateway1["longitudine"]),
+              (gateway2["latitudine"], gateway2["longitudine"])]
+
+       folium.PolyLine(loc,
+                       color='red',
+                       weight=5,
+                       opacity=0.8).add_to(m)
+
+   for gateway in soluzione:
+       for sensor in soluzione.get(gateway)['sensor_covered']:
+           sensore = find_sensor_by_id(sensor, sensors)
+
+           loc = [(soluzione.get(gateway)["latitudine"], soluzione.get(gateway)["longitudine"]),
+                  (sensore.latitudine, sensore.longitudine)]
+
+           folium.PolyLine(loc,
+                           color='blue',
+                           weight=5,
+                           opacity=0.8).add_to(m)
+   for gateway in soluzione:
+       for sensor in soluzione.get(gateway)['sensor_covered']:
+           sensore = find_sensor_by_id(sensor, sensors)
+           folium.Circle(
+               location=(sensore.latitudine, sensore.longitudine),
+               popup='id: ' + str(sensore.id) + ' lat: ' + str(sensore.latitudine) + ' long: ' + str(
+                   sensore.longitudine),
+               radius=float(1000),
+               color=str(color),
+               labels=str(sensore.id),
+               fill=True,
+               fill_color=str(color)
+           ).add_to(m)
+
+   m.save(dest_folder+'/4-full.html')

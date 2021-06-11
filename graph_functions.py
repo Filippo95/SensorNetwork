@@ -99,7 +99,8 @@ def minimum_spanning_tree(result):
                     "costo": distance_by_coord((result.get(gateway)['latitudine'],  # Vengono passate delle tuple
                                                 result.get(gateway)['longitudine']),  # di coordinate
                                                (result.get(node)['latitudine'],
-                                                result.get(node)['longitudine']))  # * rn.uniform(0.75, 1.25)
+                                                result.get(node)['longitudine'])) / 1000
+                    # * rn.uniform(0.75, 1.25)
                     # La funzione costo è proporzionale alla distanza fra i due dispositivi,
                     # ma moltiplicata per un fattore casuale (per fare in modo che non dipenda
                     # esclusivamente dalla distanza)
@@ -115,7 +116,7 @@ def minimum_spanning_tree(result):
     edges = sorted(edges,
                    key=lambda item: item["costo"],
                    reverse=False)  # dal più basso al più alto
-    print(edges)
+
     # creo un array che contiene gli archi che ho selezionato
     selected = []
     while len(edges) > 0 and len(selected) < len(vertices) - 1:
@@ -133,7 +134,10 @@ def minimum_spanning_tree(result):
         edges.pop(0)
 
     # Stampo gli archi selezionati
+    costo_totale = 0
     print("Archi selezionati per il MST:")
     for selected_edge in selected:
         print("{} - {} - {}".format(selected_edge["node_one"], selected_edge["node_two"], selected_edge["costo"]))
+        costo_totale += selected_edge["costo"]
+    print(f"\n\nIl costo totale del MST è {costo_totale}")
     return selected
