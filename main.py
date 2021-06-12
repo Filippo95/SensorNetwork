@@ -14,7 +14,7 @@ from math import ceil
 random_seed = 12345  # Per la riproducibilità degli esempi
 # Il seed originale è 1625
 
-num_sensori = 50  # Quanti sensori generare
+num_sensori = 500  # Quanti sensori generare
 
 # -----------------------------------
 # VARIABILI GLOBALI
@@ -190,7 +190,7 @@ if __name__ == '__main__':
         print("SCENARIO - NUM_SENSORI/COSTO: ")
         print_scenario(sens_dict_ord_by_num_sensori)
 
-    display_functions.display_sensors(sensors)
+    display_functions.display_sensors(sensors, "./solutions/"+str(random_seed)+"/"+str(num_sensori)+"/")
     result = greedy_optimization(sensors, gateways, sens_dict_ord_by_cap)
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori)
 
@@ -202,10 +202,10 @@ if __name__ == '__main__':
     else:
         print("\n\n\n-----------------LA SOLUZIONE TROVATA !!!!!NON!!!!! E' AMMISSIBILE-----------------\n\n\n")
 
-    display_functions.display_solution(result, sensors)
+    display_functions.display_solution(result, sensors, "./solutions/"+str(random_seed)+"/"+str(num_sensori)+"/")
     mst = minimum_spanning_tree(result)
-    display_functions.display_mst(mst, result)
-    display_functions.display_full_solution(mst, result, sensors)
+    display_functions.display_mst(mst, result, "./solutions/"+str(random_seed)+"/"+str(num_sensori)+"/")
+    display_functions.display_full_solution(mst, result, sensors, "./solutions/"+str(random_seed)+"/"+str(num_sensori)+"/")
 
     # TODO: Aggiungere alla greedy il calcolo del minimum spanning tree
     # La greedy deve poter cosiderare anche il costo di installare un dispositivo in un determinato sito in

@@ -55,7 +55,7 @@ def plot_graph_old(min_x, max_x, min_y, max_y, sensors):
     plt.show()
 
 
-def display_sensors(sensors):
+def display_sensors(sensors, dest_folder="./"):
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
 
     for i in range(len(sensors)):
@@ -69,7 +69,7 @@ def display_sensors(sensors):
             fill=True,
             fill_color='crimson'
         ).add_to(m)
-    m.save('./1-sensors.html')
+    m.save(dest_folder+'1-sensors.html')
 
 
 def find_sensor_by_id(sensor, sensor_list):
@@ -79,7 +79,7 @@ def find_sensor_by_id(sensor, sensor_list):
     return None
 
 
-def display_solution(solution, sensor_list):
+def display_solution(solution, sensor_list, dest_folder="./"):
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
     for gateway in solution:
         color = "#%06x" % rn.randint(0, 0xFFFFFF)
@@ -103,10 +103,10 @@ def display_solution(solution, sensor_list):
                 fill_color=str(color)
             ).add_to(m)
 
-    m.save('./2-solution.html')
+    m.save(dest_folder+'2-solution.html')
 
 
-def display_mst(tree, soluzione):
+def display_mst(tree, soluzione, dest_folder="./"):
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
 
     for index, gateway in enumerate(soluzione):
@@ -133,7 +133,7 @@ def display_mst(tree, soluzione):
                         weight=5,
                         opacity=0.8).add_to(m)
 
-    m.save('./3-mst.html')
+    m.save(dest_folder+'/3-mst.html')
 
 
 def display_full_solution(tree, soluzione, sensors, dest_folder="./"):
@@ -187,4 +187,4 @@ def display_full_solution(tree, soluzione, sensors, dest_folder="./"):
                fill_color=str(color)
            ).add_to(m)
 
-   m.save(dest_folder+'/4-full.html')
+   m.save(dest_folder+'4-full.html')
