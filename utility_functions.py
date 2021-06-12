@@ -2,6 +2,15 @@ from math import sin, cos, sqrt, atan2, radians
 from deprecated import deprecated
 
 
+# classe di supporto per controllare la quanità
+# di output stampato a video
+class Verbosity:
+    def __init__(self, quiet, verbose, more_verbose):
+        self.quiet = quiet
+        self.verbose = verbose or more_verbose       # se ho output more_verbose voglio che si stampi anche il verbose
+        self.more_verbose = more_verbose
+
+
 # Inutilizzato.
 # Creato in origine per calcolare la distanza in 2D, ora si usa
 # un metodo più preciso che tiene conto della curvatura terrestre.
@@ -56,3 +65,28 @@ def print_scenario(a_dict):
         print("Rapporto capacità/costo: " + str(temp_rapp_cap_costo))
         print("Rapporto numsensori/costo: " + str(temp_rapp_numsensori_costo))
     print("\n\n")
+
+
+verbosity = Verbosity(False, False, False)
+
+
+def get_verbosity():
+    return verbosity
+
+
+def set_verbosity(quiet=False, verbose=False, more_verbose=False):
+    global verbosity
+    verbosity = Verbosity(quiet, verbose, more_verbose)
+
+
+random_seed = 12345  # Per la riproducibilità degli esempi
+# Il seed originale è 1625
+
+
+def get_seed():
+    return random_seed
+
+
+def set_seed(new_seed):
+    global random_seed
+    random_seed = new_seed

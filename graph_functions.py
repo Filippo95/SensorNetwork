@@ -85,6 +85,7 @@ def minimum_spanning_tree(result):
     vertices = []  # i nodi del grafo
     edges = []  # gli archi del grafo
 
+    # FIXME: Terribile inefficienza, triplo ciclo for!!!
     for gateway in result:
         vertices.append(gateway)
         temp_result = result.copy()  # creo una copia del dizionario
@@ -96,14 +97,9 @@ def minimum_spanning_tree(result):
                 edges.append({
                     "node_one": gateway,
                     "node_two": node,
-                    "costo": distance_by_coord((result.get(gateway)['latitudine'],  # Vengono passate delle tuple
-                                                result.get(gateway)['longitudine']),  # di coordinate
-                                               (result.get(node)['latitudine'],
-                                                result.get(node)['longitudine'])) / 1000
-                    # * rn.uniform(0.75, 1.25)
-                    # La funzione costo è proporzionale alla distanza fra i due dispositivi,
-                    # ma moltiplicata per un fattore casuale (per fare in modo che non dipenda
-                    # esclusivamente dalla distanza)
+                    "costo": distance_by_coord(  # Vengono passate delle tuple di coordinate
+                        (result.get(gateway)['latitudine'], result.get(gateway)['longitudine']),
+                        (result.get(node)['latitudine'], result.get(node)['longitudine'])) / 1000
                 })
 
     # Algoritmo di Kruskal:
@@ -135,9 +131,9 @@ def minimum_spanning_tree(result):
 
     # Stampo gli archi selezionati
     costo_totale = 0
-    print("Archi selezionati per il MST:")
+    print("Archi selezionati per il MST:\n")
     for selected_edge in selected:
         print("{} - {} - {}".format(selected_edge["node_one"], selected_edge["node_two"], selected_edge["costo"]))
         costo_totale += selected_edge["costo"]
-    print(f"\n\nIl costo totale del MST è {costo_totale}")
-    return selected
+    print(f"\n\nIl costo del MST è {round(costo_totale)}")
+    return selected, costo_totale
