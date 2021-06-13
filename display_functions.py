@@ -56,7 +56,7 @@ def plot_graph_old(min_x, max_x, min_y, max_y, sensors):
 
 
 def display_sensors(sensors, dest_folder="./"):
-    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
+    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
 
     for i in range(len(sensors)):
         temp_sensor = sensors[i]
@@ -80,9 +80,12 @@ def find_sensor_by_id(sensor, sensor_list):
 
 
 def display_solution(solution, sensor_list, dest_folder="./"):
-    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
+    color_palette = ["#F72585", "#B5179E", "#7209B7", "#560BAD", "#480CA8",
+                     "#3A0CA3", "#3F37C9", "#4361EE", "#4895EF", "#4CC9F0"]
+
+    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
     for gateway in solution:
-        color = "#%06x" % rn.randint(0, 0xFFFFFF)
+        color = rn.choice(color_palette)
         folium.Marker(
             location=[solution.get(gateway)['latitudine'], solution.get(gateway)['longitudine']],
             popup='id: ' + str(solution.get(gateway)['sensor_id']) +
@@ -97,20 +100,21 @@ def display_solution(solution, sensor_list, dest_folder="./"):
                 popup='id: ' + str(sensore.id) + ' lat: ' + str(sensore.latitudine) + ' long: ' + str(
                     sensore.longitudine),
                 radius=float(sensore.portata),
-                color=str(color),
+                color=color,
                 labels=str(sensore.id),
                 fill=True,
-                fill_color=str(color)
+                fill_color=color
             ).add_to(m)
 
     m.save(dest_folder + '2-solution.html')
 
 
 def display_mst(tree, soluzione, dest_folder="./"):
-    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
+    mst_color = "#F72585"
+
+    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
 
     for index, gateway in enumerate(soluzione):
-        color = "#%06x" % rn.randint(0, 0xFFFFFF)
         folium.Marker(
             location=[soluzione.get(gateway)['latitudine'], soluzione.get(gateway)['longitudine']],
             icon=folium.DivIcon(
@@ -120,6 +124,7 @@ def display_mst(tree, soluzione, dest_folder="./"):
                   ' longitudine: ' + str(soluzione.get(gateway)['longitudine']) +
                   ' sensori coperti: ' + str(soluzione.get(gateway)['sensor_covered']),
         ).add_to(m)
+
     for arco in tree:
         id_gateway1 = arco["node_one"]
         id_gateway2 = arco["node_two"]
@@ -129,7 +134,7 @@ def display_mst(tree, soluzione, dest_folder="./"):
                (gateway2["latitudine"], gateway2["longitudine"])]
 
         folium.PolyLine(loc,
-                        color='red',
+                        color=mst_color,
                         weight=5,
                         opacity=0.8).add_to(m)
 
@@ -137,9 +142,13 @@ def display_mst(tree, soluzione, dest_folder="./"):
 
 
 def display_full_solution(tree, soluzione, sensors, dest_folder="./"):
-    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8)
+    mst_color = "#4CC9F0"
+    color_palette = ["#F72585", "#B5179E", "#7209B7", "#560BAD", "#480CA8",
+                     "#3A0CA3", "#3F37C9", "#4361EE", "#4895EF"]
+
+    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
+
     for index, gateway in enumerate(soluzione):
-        color = "#%06x" % rn.randint(0, 0xFFFFFF)
         folium.Marker(
             location=[soluzione.get(gateway)['latitudine'], soluzione.get(gateway)['longitudine']],
             icon=folium.DivIcon(
@@ -149,6 +158,7 @@ def display_full_solution(tree, soluzione, sensors, dest_folder="./"):
                   ' longitudine: ' + str(soluzione.get(gateway)['longitudine']) +
                   ' sensori coperti: ' + str(soluzione.get(gateway)['sensor_covered']),
         ).add_to(m)
+
     for arco in tree:
         id_gateway1 = arco["node_one"]
         id_gateway2 = arco["node_two"]
@@ -158,33 +168,30 @@ def display_full_solution(tree, soluzione, sensors, dest_folder="./"):
                (gateway2["latitudine"], gateway2["longitudine"])]
 
         folium.PolyLine(loc,
-                        color='red',
+                        color=mst_color,
                         weight=5,
                         opacity=0.8).add_to(m)
 
     for gateway in soluzione:
-        for sensor in soluzione.get(gateway)['sensor_covered']:
-            sensore = find_sensor_by_id(sensor, sensors)
-
-            loc = [(soluzione.get(gateway)["latitudine"], soluzione.get(gateway)["longitudine"]),
-                   (sensore.latitudine, sensore.longitudine)]
-
-            folium.PolyLine(loc,
-                            color='blue',
-                            weight=5,
-                            opacity=0.8).add_to(m)
-    for gateway in soluzione:
+        sensor_color = rn.choice(color_palette)
         for sensor in soluzione.get(gateway)['sensor_covered']:
             sensore = find_sensor_by_id(sensor, sensors)
             folium.Circle(
                 location=(sensore.latitudine, sensore.longitudine),
                 popup='id: ' + str(sensore.id) + ' lat: ' + str(sensore.latitudine) + ' long: ' + str(
                     sensore.longitudine),
-                radius=float(1000),
-                color=str(color),
+                radius=float(500),
+                color=sensor_color,
                 labels=str(sensore.id),
                 fill=True,
-                fill_color=str(color)
+                fill_color=sensor_color
             ).add_to(m)
+            loc = [(soluzione.get(gateway)["latitudine"], soluzione.get(gateway)["longitudine"]),
+                   (sensore.latitudine, sensore.longitudine)]
+
+            folium.PolyLine(loc,
+                            color=sensor_color,
+                            weight=2,
+                            opacity=0.8).add_to(m)
 
     m.save(dest_folder + '4-full.html')

@@ -52,11 +52,12 @@ def find_covered(sensor, senders, capacita_gateway, find_by="distanza_capacita")
     capacita_coperta = 0
 
     while len(senders) > 0:
-        # prendo il primo elemento di senders ordinato per il criterio e controllo che ci stia
+        # prendo il primo elemento di senders, ordinato per il criterio, e controllo che "ci stia" nella capacità
+        # del gateway/dispositivo
         if senders[0].send_rate + capacita_coperta <= capacita_gateway:
             capacita_coperta += senders[0].send_rate  # aggiungo all'accumulatore
             selected.append(senders[0])  # aggiungo ai coperti
-        senders.remove(senders[0])  # elimino dai possibili coperti
+        senders.remove(senders[0])  # elimino da quelli ancora da coprire
 
     return selected
 

@@ -24,9 +24,10 @@ sensors = []
 gateways = []
 
 max_x = 12  # longitudine massima est   DX
-min_x = 11  # ovest                     SX
+min_x = 10  # ovest                     SX
 max_y = 45  # latitudine minima nord    UP
 min_y = 44  # sud                       DN
+# Originali: 12 / 11 / 45 / 44
 
 
 # definisco la classe di sensori
@@ -80,16 +81,21 @@ if __name__ == '__main__':
     # una disponibilità limitata per ogni classe di
     # dispositivo, a parte la più basica di cui si
     # suppone si abbia disponibilità illimitata
+    classe_0 = Gateway(0, 8, 6)
+    classe_1 = Gateway(1, 15, 14)
+    classe_2 = Gateway(2, 25, 25)
+    classe_3 = Gateway(3, 50, 75)
+    classe_4 = Gateway(4, 100, 175)
     num_lowest_class = 500  # Originale: 500
-    gateways.append(Gateway(0, 8, 6))  # Gateway di classe 0
+    gateways.append(classe_0)  # Gateway di classe 0
     for i in range(num_lowest_class):
-        gateways.append(Gateway(1, 15, 14))  # Gateway di classe 1
+        gateways.append(classe_1)  # Gateway di classe 1
     for i in range(ceil(num_lowest_class/5)):
-        gateways.append(Gateway(2, 25, 25))  # Gateway di classe 2
+        gateways.append(classe_2)  # Gateway di classe 2
     for i in range(ceil(num_lowest_class/25)):
-        gateways.append(Gateway(3, 50, 75))  # Gateway di classe 3
+        gateways.append(classe_3)  # Gateway di classe 3
     for i in range(ceil(num_lowest_class/125)):
-        gateways.append(Gateway(4, 100, 175))  # Gateway di classe 4
+        gateways.append(classe_4)  # Gateway di classe 4
 
     # -----------------------------------
     # COSTRUZIONE DELLO SCENARIO

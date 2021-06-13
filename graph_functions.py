@@ -73,8 +73,7 @@ def ha_cicli(edge_list):
 
 def esiste_arco(edges, node_one, node_two):
     for item in edges:
-        if (item["node_one"] == node_one and item["node_two"] == node_two) or \
-                (item["node_one"] == node_two and item["node_two"] == node_one):
+        if item["node_one"] == node_two and item["node_two"] == node_one:
             return True
     return False
 
@@ -85,36 +84,33 @@ def minimum_spanning_tree(result):
     vertices = []  # i nodi del grafo
     edges = []  # gli archi del grafo
 
-    # FIXME: Terribile inefficienza, triplo ciclo for!!!
     for gateway in result:
         vertices.append(gateway)
         temp_result = result.copy()  # creo una copia del dizionario
         temp_result.pop(gateway)  # e ne elimino l'elemento attuale
         for node in temp_result:
-            if not esiste_arco(edges, gateway, node):  # se non esiste già l'arco che connette il gateway attuale
-                # con il nodo attuale (cioè qualsiasi altro gateway), lo aggiungo al grafo (senza questo check avrei
-                # un multigrafo, noi invece vogliamo creare un grafo semplice)
-                edges.append({
+            edges.append({
                     "node_one": gateway,
                     "node_two": node,
                     "costo": distance_by_coord(  # Vengono passate delle tuple di coordinate
                         (result.get(gateway)['latitudine'], result.get(gateway)['longitudine']),
                         (result.get(node)['latitudine'], result.get(node)['longitudine'])) / 1000
-                })
+            })
 
-    # Algoritmo di Kruskal:
-    # 1) Seleziono l'arco di costo minimo fra quelli non ancora considerati e lo aggiungo alla soluzione
-    # 2) Se il grafo risultante contiene un ciclo lo rimuovo dalla soluzione e continuo
-    # 3) Se il grafo, invece, è aciclico, lo mantengo nella soluzione e continuo
-    # 4) Mi fermo se ho esaminato tutti gli archi o se len(soluzione) == n-1 (numero di vertici, o nodi, -1)
+    # Rimuovo gli archi duplicati, vogliamo creare un grafo semplice e non un multigrafo
+    # (molto più veloce farlo dopo, rispetto a fare il controllo durante la creazione del grafo)
+    for edge in edges:
+        if esiste_arco(edges, edge["node_one"], edge["node_two"]):
+            edges.remove(edge)
 
     # ordino gli archi per costo
     edges = sorted(edges,
                    key=lambda item: item["costo"],
                    reverse=False)  # dal più basso al più alto
 
-    # creo un array che contiene gli archi che ho selezionato
     selected = []
+    # finchè non ho esaminato tutti gli archi, o ho collegato tutti i vertici,
+    # ossia len(soluzione) == n-1 (numero di vertici, o nodi, -1)...
     while len(edges) > 0 and len(selected) < len(vertices) - 1:
         # aggiungo l'arco alla soluzione (il primo elemento di edges
         # è sempre quello con costo minore)
@@ -126,7 +122,7 @@ def minimum_spanning_tree(result):
         if ha_cicli(selected_copy):
             # ha cicli, quindi lo rimuovo
             selected.pop(-1)
-        # in ogni caso, elimino l'arco appena considerato
+        # in ogni caso, elimino l'arco appena considerato e itero
         edges.pop(0)
 
     # Stampo gli archi selezionati
