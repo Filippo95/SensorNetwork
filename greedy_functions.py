@@ -88,7 +88,7 @@ def calcola_scenario(sensor_list, gateway_list, order_by="rapp_cap_costo"):
 
 
 def greedy_optimization(sensors, gateways, sens_dict_ordered,
-                        order_by="rapp_numsensori_costo",
+                        order_by="rapp_cap_costo",
                         pack_by="distanza_capacita"):
     # Di default, seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
     # (o rapporto numsensori/costo maggiore, dipende dal parametro order_by)
@@ -134,7 +134,7 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered,
         # Rimuovo da una copia dell'array dei sensori i sensori che ho
         # coperto con questa iterazione
         for a_sensor in which_covered:
-            # Ho rimosso il check "if a_sensor in sensors_copy", perchè  per come abbiamo scritto
+            # Ho rimosso il check "if a_sensor in sensors_copy", perchè per come abbiamo scritto
             # il codice, quella condizione sarà sempre vera
             sensors_copy.remove(a_sensor)
         if not get_verbosity().quiet:

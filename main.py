@@ -74,7 +74,8 @@ if __name__ == '__main__':
         "-v" in sys.argv,
         "-vv" in sys.argv
     )
-    # setto il seed
+
+    # Imposto il seed
     rn.seed(get_seed())
 
     # Creiamo i sensori in maniera pseudo-casuale
@@ -102,24 +103,7 @@ if __name__ == '__main__':
     for i in range(ceil(num_lowest_class/125)):
         gateways.append(classe_4)  # Gateway di classe 4
 
-    # -----------------------------------
-    # COSTRUZIONE DELLO SCENARIO
-    # -----------------------------------
-
-    # Crea un dizionario dei sensori con le relative proprietà, di default i sensori vengono ordinati
-    # secondo il rapporto capacità/costo (quanta capacità totale posso coprire posizionando un gateway in
-    # quel sito / il costo del gateway che può coprire quella capacità (o il gateway con capacità massima,
-    # se non ce ne fosse uno che riesce a coprirla tutta)).
-    # Creo lo stesso dizionario ma ordinato per rapporto tra numero di sensori coperti da gateway e
-    # il costo di installazione del gateway
-    order_by = "rapp_cap_costo"
-    sens_dict = calcola_scenario(sensors, gateways, order_by=order_by)
-    if get_verbosity().verbose:
-        print("\n\n\n\n\n---------------------------------------------------\n\n\n\n\n")
-        print("SCENARIO - ORDINATO PER: "+order_by)
-        print_scenario(sens_dict)
-
-    # Preparo le cartelle necessarie
+    # Preparo le cartelle per le soluzioni
     saving_path = f"./solutions/{get_seed()}/{num_sensori}/"
     if not os.path.isdir("./solutions"):
         os.mkdir("./solutions")
@@ -128,6 +112,23 @@ if __name__ == '__main__':
     if not os.path.isdir(saving_path):
         os.mkdir(saving_path)
 
+    # -----------------------------------
+    # COSTRUZIONE DELLO SCENARIO
+    # -----------------------------------
+
+    # Crea un dizionario dei sensori con le relative proprietà, di default i sensori vengono ordinati
+    # secondo il rapporto capacità/costo (quanta capacità totale posso coprire posizionando un gateway in
+    # quel sito / il costo del gateway che può coprire quella capacità (o il gateway con capacità massima,
+    # se non ce ne fosse uno che riesce a coprirla tutta)).
+    # In alternativa lo si può ordinare per il rapporto fra il numero di sensori coperti e il costo
+    # di installazione del gateway che può coprire la capacità richiesta.
+    order_by = "rapp_cap_costo"
+    sens_dict = calcola_scenario(sensors, gateways, order_by=order_by)
+    if get_verbosity().verbose:
+        print("\n\n\n\n\n---------------------------------------------------\n\n\n\n\n")
+        print("SCENARIO - ORDINATO PER: "+order_by)
+        print_scenario(sens_dict)
+
     # creo il file .html che mostra i sensori sulla mappa
     display_sensors(sensors, saving_path)
 
@@ -135,13 +136,14 @@ if __name__ == '__main__':
     # GREEDY
     # -----------------------------------
 
-    # eseguo la greedy passando lo scenario ordinato per rapporto capacità/costo
-    result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict, order_by)
-
-    # Con il parametro pack_by è possibile modificare anche il comportamento della greedy in quei casi in cui
+    # Con il parametro pack_by è possibile modificare il comportamento della greedy in quei casi in cui
     # un gateway non riesca a coprire tutta la capacità di un sito, di default viene risolto uno zaino binario
-    # con una greedy che seleziona i sensori da coprire secondo il loro rapporto capacità/distanza (ossia si
-    # coprono per primi i sensori che hanno capacità grandi e sono vicini al gateway che stiamo installando).
+    # con una greedy che seleziona i sensori da coprire per primi secondo il loro rapporto capacità/distanza
+    # (ossia si coprono per primi i sensori che hanno capacità grandi e sono vicini al gateway che stiamo installando).
+    pack_by = "distanza_capacita"
+
+    # eseguo la greedy passando lo scenario ordinato per rapporto capacità/costo
+    result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict, order_by, pack_by)
 
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori)
 
