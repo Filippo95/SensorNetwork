@@ -3,12 +3,13 @@
 import sys
 import os
 import random as rn
-import display_functions
+from math import ceil
+from display_functions import display_sensors, display_solution, display_mst, display_full_solution
 from graph_functions import minimum_spanning_tree
 from utility_functions import print_scenario, get_seed, set_seed, get_verbosity, set_verbosity
 from greedy_functions import calcola_scenario, greedy_optimization
 from feasibility_functions import controlla_ammisibilita
-from math import ceil
+
 
 # -----------------------------------
 # VARIABILI GLOBALI
@@ -105,16 +106,17 @@ if __name__ == '__main__':
     # COSTRUZIONE DELLO SCENARIO
     # -----------------------------------
 
-    # Crea un dizionario dei sensori con le relative proprietà, di default i sensori vengono ordinati per capacità
-    # sens_dict_ord_by_cap = calcola_scenario(sensors, gateways)
-    # creo lo stesso dizionario ma ordinato per rapporto tra numero di sensori coperti da gateway e
+    # Crea un dizionario dei sensori con le relative proprietà, di default i sensori vengono ordinati
+    # secondo il rapporto capacità/costo (quanta capacità totale posso coprire posizionando un gateway in
+    # quel sito / il costo del gateway che può coprire quella capacità (o il gateway con capacità massima,
+    # se non ce ne fosse uno che riesce a coprirla tutta)).
+    # Creo lo stesso dizionario ma ordinato per rapporto tra numero di sensori coperti da gateway e
     # il costo di installazione del gateway
+    order_by = "rapp_cap_costo"
     sens_dict = calcola_scenario(sensors, gateways, order_by=order_by)
     if get_verbosity().verbose:
-        #print("SCENARIO - CAPACITA'/COSTO: ")
-        #print_scenario(sens_dict_ord_by_cap)
         print("\n\n\n\n\n---------------------------------------------------\n\n\n\n\n")
-        print("SCENARIO ordinato per: "+order_by)
+        print("SCENARIO - ORDINATO PER: "+order_by)
         print_scenario(sens_dict)
 
     # Preparo le cartelle necessarie
@@ -125,10 +127,22 @@ if __name__ == '__main__':
         os.mkdir(f"./solutions/{get_seed()}")
     if not os.path.isdir(saving_path):
         os.mkdir(saving_path)
+
     # creo il file .html che mostra i sensori sulla mappa
-    display_functions.display_sensors(sensors, saving_path)
-    # eseguo la greedy passando i lo scenario ordinato per capacità di copertura
-    result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict,order_by)
+    display_sensors(sensors, saving_path)
+
+    # -----------------------------------
+    # GREEDY
+    # -----------------------------------
+
+    # eseguo la greedy passando lo scenario ordinato per rapporto capacità/costo
+    result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict, order_by)
+
+    # Con il parametro pack_by è possibile modificare anche il comportamento della greedy in quei casi in cui
+    # un gateway non riesca a coprire tutta la capacità di un sito, di default viene risolto uno zaino binario
+    # con una greedy che seleziona i sensori da coprire secondo il loro rapporto capacità/distanza (ossia si
+    # coprono per primi i sensori che hanno capacità grandi e sono vicini al gateway che stiamo installando).
+
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori)
 
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_cap, pack_by="capacita")
@@ -140,20 +154,31 @@ if __name__ == '__main__':
         print("\n\n\n-----------------LA SOLUZIONE TROVATA !!!!!NON!!!!! E' AMMISSIBILE-----------------\n\n\n")
         print("\n\n\n-----------------COMPUTAZIONE INTERROTTA-----------------\n\n\n")
         sys.exit()
+
     # creo il file .html che mostra la soluzione ovvero dove ho installato i vari gateway
-    display_functions.display_solution(result, sensors, saving_path)
+    display_solution(result, sensors, saving_path)
+
+    # -----------------------------------
+    # MINIMUM SPANNING TREE
+    # -----------------------------------
+
     # calcolo  il MST del risultato
     mst, mst_cost = minimum_spanning_tree(result)
     # creo il file .html che mostra il MST
-    display_functions.display_mst(mst, result, saving_path)
+    display_mst(mst, result, saving_path)
+
+    # -----------------------------------
+    # COSTO TOTALE
+    # -----------------------------------
+
     # creo il file .html che mostra l'intera soluzione
-    display_functions.display_full_solution(mst, result, sensors, saving_path)
+    display_full_solution(mst, result, sensors, saving_path)
 
     funzione_obiettivo = greedy_cost + mst_cost
 
     print(f"\n\nIl costo totale è: {round(funzione_obiettivo)}")
 
-    # TODO: Aggiungere alla greedy il calcolo del minimum spanning tree
+    # TODO: Idea: aggiungere alla greedy il calcolo del minimum spanning tree (è fattibile?...)
     # La greedy deve poter considerare anche il costo di installare un dispositivo in un determinato sito in
     # relazione al costo del minimum spanning tree.
 
@@ -163,8 +188,6 @@ if __name__ == '__main__':
     # in testa al nostro dizionario di siti da considerare quelli che hanno un rapporto capacità/costo elevato
     # e che contemporaneamente coprono molti sensori, così "sfoltisco" il prima possibile i siti molto densi.
     # E' un po' una combinazione del rapporto capacità/costo e numsensori/costo. >
-
-    # TODO: Dimensionare correttamente il costo del Minimum Spanning Tree
 
     # TODO: Test di ammissibilità
     # Una funzione che fa il "test di ammissibilità", ossia che data una soluzione fa tutti i controlli

@@ -87,9 +87,11 @@ def calcola_scenario(sensor_list, gateway_list, order_by="rapp_cap_costo"):
                                     reverse=True)}
 
 
-def greedy_optimization(sensors, gateways, sens_dict_ordered, pack_by="distanza_capacita", order_by="rapp_numsensori_costo"):
-    # Seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
-    # (o rapporto numsensori/costo maggiore)
+def greedy_optimization(sensors, gateways, sens_dict_ordered,
+                        order_by="rapp_numsensori_costo",
+                        pack_by="distanza_capacita"):
+    # Di default, seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
+    # (o rapporto numsensori/costo maggiore, dipende dal parametro order_by)
     selected = {}
     sensors_copy = sensors.copy()
     utilizzo_gateway = [0, 0, 0, 0, 0]
