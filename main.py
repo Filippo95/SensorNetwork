@@ -56,18 +56,24 @@ class Gateway:
 # ----MAIN
 if __name__ == '__main__':
     # Come far partire il programma da riga di comando:
-    # python main.py [numsensori] [seed] [-v] [-vv] [-q]
+    # python main.py <numsensori> <seed> <order_by> <pack_by> [-v] [-vv] [-q]
     # O passo sia il numero dei sensori sia il seed, oppure
     # il programma utilizzerà entrambi i valori di default.
+    # In questo caso devo passare anche il parametro order_by e pack_by
     # Passare uno solo dei modificatori dell'output (-v, -vv o -q).
 
-    if len(sys.argv) > 3:
+    order_by = "rapp_cap_costo"
+    pack_by = "distanza_capacita"
+
+    if len(sys.argv) > 4:
         num_sensori = int(sys.argv[1])
         set_seed(int(sys.argv[2]))
         order_by = str(sys.argv[3])
-        # l'ordinamento può essere fatto per:
-        # rapp_cap_costo
-        # rapp_numsensori_costo
+        pack_by = str(sys.argv[4])
+        # L'ordinamento può essere fatto per:
+        # rapp_cap_costo | rapp_numsensori_costo
+        # pack_by può essere:
+        # distanza_capacita | capacita
 
     set_verbosity(
         "-q" in sys.argv,
@@ -122,7 +128,6 @@ if __name__ == '__main__':
     # se non ce ne fosse uno che riesce a coprirla tutta)).
     # In alternativa lo si può ordinare per il rapporto fra il numero di sensori coperti e il costo
     # di installazione del gateway che può coprire la capacità richiesta.
-    order_by = "rapp_cap_costo"
     sens_dict = calcola_scenario(sensors, gateways, order_by=order_by)
     if get_verbosity().verbose:
         print("\n\n\n\n\n---------------------------------------------------\n\n\n\n\n")
@@ -140,8 +145,6 @@ if __name__ == '__main__':
     # un gateway non riesca a coprire tutta la capacità di un sito, di default viene risolto uno zaino binario
     # con una greedy che seleziona i sensori da coprire per primi secondo il loro rapporto capacità/distanza
     # (ossia si coprono per primi i sensori che hanno capacità grandi e sono vicini al gateway che stiamo installando).
-    pack_by = "distanza_capacita"
-
     # eseguo la greedy passando lo scenario ordinato per rapporto capacità/costo
     result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict, order_by, pack_by)
 
@@ -149,11 +152,12 @@ if __name__ == '__main__':
 
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_cap, pack_by="capacita")
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori, pack_by="capacita")
-
-    if controlla_ammisibilita(result, sensors):
+    ammissibile, reason_of_failure = controlla_ammisibilita(result, sensors)
+    if ammissibile:
         print("\n\n\n-----------------LA SOLUZIONE TROVATA E' AMMISSIBILE-----------------\n\n\n")
     else:
         print("\n\n\n-----------------LA SOLUZIONE TROVATA !!!!!NON!!!!! E' AMMISSIBILE-----------------\n\n\n")
+        print(reason_of_failure)
         print("\n\n\n-----------------COMPUTAZIONE INTERROTTA-----------------\n\n\n")
         sys.exit()
 
@@ -184,14 +188,11 @@ if __name__ == '__main__':
     # La greedy deve poter considerare anche il costo di installare un dispositivo in un determinato sito in
     # relazione al costo del minimum spanning tree.
 
-    # < Aggiungere come criterio nella greedy non solo il massimo rapporto capacità/costo,
+    # TODO: Idee di cui non siamo troppo convinti:
+    # - Per il test di ammissibiltà, fare anche qualche controllo sul minimum spanning tree?
+    # - Aggiungere come criterio nella greedy non solo il massimo rapporto capacità/costo,
     # ma anche un ulteriore valore che considera quanti sensori sto coprendo, ossia: se ho un solo sensore di
     # capacità 8 e un gateway di capacità 8, il rapporto capacità/costo è 1.0 (il massimo). Però vorrei mettere
     # in testa al nostro dizionario di siti da considerare quelli che hanno un rapporto capacità/costo elevato
     # e che contemporaneamente coprono molti sensori, così "sfoltisco" il prima possibile i siti molto densi.
-    # E' un po' una combinazione del rapporto capacità/costo e numsensori/costo. >
-
-    # TODO: Test di ammissibilità
-    # Una funzione che fa il "test di ammissibilità", ossia che data una soluzione fa tutti i controlli
-    # per verificare se i vincoli sono stati rispettati:
-    # < 4) Qualche controllo sul minimum spanning tree? >
+    # E' un po' una combinazione del rapporto capacità/costo e numsensori/costo.

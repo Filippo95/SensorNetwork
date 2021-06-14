@@ -33,7 +33,24 @@ def single_demand(solution):
     return True
 
 
+# TODO: Inserire questo vincolo nel modello matematico!!!
+def only_one_gw_per_site(solution):
+    for key, a_gateway in solution.items():
+        temp_solution = solution.copy()
+        temp_solution.pop(key)
+        for another_gateway in temp_solution.values():
+            if a_gateway["sensor_id"] == another_gateway["sensor_id"]:
+                return False
+    return True
+
+
 def controlla_ammisibilita(solution, sensor_list):
-    return tutti_sensori_coperti(solution, sensor_list) and \
-            gateway_capacity(solution, sensor_list) and \
-            single_demand(solution)
+    if not tutti_sensori_coperti(solution, sensor_list):
+        return False, "Non tutti i sensori sono stati coperti!"
+    if not gateway_capacity(solution, sensor_list):
+        return False, "Alcuni gateway coprono capacità superiori al loro massimo!"
+    if not single_demand(solution):
+        return False, "Alcuni sensori sono coperti da più gateway!"
+    if not only_one_gw_per_site(solution):
+        return False, "Più gateway sono installati nello stesso sito!"
+    return True, "OK"

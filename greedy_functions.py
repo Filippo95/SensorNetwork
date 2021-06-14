@@ -35,6 +35,10 @@ def find_best_gateway(capacita, gateway_list):
 def find_covered(sensor, senders, capacita_gateway, find_by="distanza_capacita"):
     selected = []
 
+    senders.remove(sensor)  # Rimuovo dai senders il sensore posizionato nel sito in considerazione,
+    # perchè decido di coprirlo sempre (se installo un dispositivo presso un sensore, allora decido
+    # di coprire sempre quel sensore con quel dispositivo)
+
     for sender in senders:
         if find_by == "capacita":
             sender.criterio = sender.send_rate
@@ -50,6 +54,12 @@ def find_covered(sensor, senders, capacita_gateway, find_by="distanza_capacita")
                      reverse=True)  # in ordine decrescente
 
     capacita_coperta = 0
+    # Copro sempre il sensore presso il quale ho installato il dispositivo
+    if sensor.send_rate <= capacita_gateway:
+        capacita_coperta += sensor.send_rate
+        selected.append(sensor)
+    else:
+        return []
 
     while len(senders) > 0:
         # prendo il primo elemento di senders, ordinato per il criterio, e controllo che "ci stia" nella capacità
