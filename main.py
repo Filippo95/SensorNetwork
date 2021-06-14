@@ -60,16 +60,20 @@ if __name__ == '__main__':
     # il programma utilizzerà entrambi i valori di default.
     # Passare uno solo dei modificatori dell'output (-v, -vv o -q).
 
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 3:
         num_sensori = int(sys.argv[1])
         set_seed(int(sys.argv[2]))
+        order_by = str(sys.argv[3])
+        # l'ordinamento può essere fatto per:
+        # rapp_cap_costo
+        # rapp_numsensori_costo
 
     set_verbosity(
         "-q" in sys.argv,
         "-v" in sys.argv,
         "-vv" in sys.argv
     )
-
+    # setto il seed
     rn.seed(get_seed())
 
     # Creiamo i sensori in maniera pseudo-casuale
@@ -101,15 +105,17 @@ if __name__ == '__main__':
     # COSTRUZIONE DELLO SCENARIO
     # -----------------------------------
 
-    # Crea un dizionario dei sensori con le relative proprietà
-    sens_dict_ord_by_cap = calcola_scenario(sensors, gateways)
-    sens_dict_ord_by_num_sensori = calcola_scenario(sensors, gateways, order_by="rapp_numsensori_costo")
+    # Crea un dizionario dei sensori con le relative proprietà, di default i sensori vengono ordinati per capacità
+    # sens_dict_ord_by_cap = calcola_scenario(sensors, gateways)
+    # creo lo stesso dizionario ma ordinato per rapporto tra numero di sensori coperti da gateway e
+    # il costo di installazione del gateway
+    sens_dict = calcola_scenario(sensors, gateways, order_by=order_by)
     if get_verbosity().verbose:
-        print("SCENARIO - CAPACITA'/COSTO: ")
-        print_scenario(sens_dict_ord_by_cap)
+        #print("SCENARIO - CAPACITA'/COSTO: ")
+        #print_scenario(sens_dict_ord_by_cap)
         print("\n\n\n\n\n---------------------------------------------------\n\n\n\n\n")
-        print("SCENARIO - NUM_SENSORI/COSTO: ")
-        print_scenario(sens_dict_ord_by_num_sensori)
+        print("SCENARIO ordinato per: "+order_by)
+        print_scenario(sens_dict)
 
     # Preparo le cartelle necessarie
     saving_path = f"./solutions/{get_seed()}/{num_sensori}/"
@@ -119,9 +125,10 @@ if __name__ == '__main__':
         os.mkdir(f"./solutions/{get_seed()}")
     if not os.path.isdir(saving_path):
         os.mkdir(saving_path)
-
+    # creo il file .html che mostra i sensori sulla mappa
     display_functions.display_sensors(sensors, saving_path)
-    result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict_ord_by_cap)
+    # eseguo la greedy passando i lo scenario ordinato per capacità di copertura
+    result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict,order_by)
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori)
 
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_cap, pack_by="capacita")
@@ -133,15 +140,18 @@ if __name__ == '__main__':
         print("\n\n\n-----------------LA SOLUZIONE TROVATA !!!!!NON!!!!! E' AMMISSIBILE-----------------\n\n\n")
         print("\n\n\n-----------------COMPUTAZIONE INTERROTTA-----------------\n\n\n")
         sys.exit()
-
+    # creo il file .html che mostra la soluzione ovvero dove ho installato i vari gateway
     display_functions.display_solution(result, sensors, saving_path)
+    # calcolo  il MST del risultato
     mst, mst_cost = minimum_spanning_tree(result)
+    # creo il file .html che mostra il MST
     display_functions.display_mst(mst, result, saving_path)
+    # creo il file .html che mostra l'intera soluzione
     display_functions.display_full_solution(mst, result, sensors, saving_path)
 
     funzione_obiettivo = greedy_cost + mst_cost
 
-    print(f"\n\nIl costo totale è {round(funzione_obiettivo)}")
+    print(f"\n\nIl costo totale è: {round(funzione_obiettivo)}")
 
     # TODO: Aggiungere alla greedy il calcolo del minimum spanning tree
     # La greedy deve poter considerare anche il costo di installare un dispositivo in un determinato sito in

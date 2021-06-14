@@ -76,7 +76,8 @@ def calcola_scenario(sensor_list, gateway_list, order_by="rapp_cap_costo"):
         sens_dictionary[this_sens] = {"senders": this_senders,
                                       "tot_capacita": tot_capacita,
                                       "rapp_cap_costo": rapp_cap_costo,
-                                      "rapp_numsensori_costo": rapp_numsensori_costo}
+                                      "rapp_numsensori_costo": rapp_numsensori_costo
+                                      }
         if get_verbosity().more_verbose:
             print(f"\nIl sensore {this_sens.id} è nel raggio di {num_senders} sensori, " +
                   f"che hanno una capacità totale di {tot_capacita} {this_sens.send_rate_unit}")
@@ -86,7 +87,7 @@ def calcola_scenario(sensor_list, gateway_list, order_by="rapp_cap_costo"):
                                     reverse=True)}
 
 
-def greedy_optimization(sensors, gateways, sens_dict_ordered, pack_by="distanza_capacita"):
+def greedy_optimization(sensors, gateways, sens_dict_ordered, pack_by="distanza_capacita", order_by="rapp_numsensori_costo"):
     # Seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
     # (o rapporto numsensori/costo maggiore)
     selected = {}
@@ -141,7 +142,7 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered, pack_by="distanza_
             print("\n")
 
         # aggiorno lo scenario dopo l'assegnazione, e dopo aver rimosso quelli già assegnati
-        sens_dict_ordered = calcola_scenario(sensors_copy, gateways)
+        sens_dict_ordered = calcola_scenario(sensors_copy, gateways, order_by=order_by)
 
     # Stampo l'utilizzo dei dispositivi per classe
     if not get_verbosity().quiet:
