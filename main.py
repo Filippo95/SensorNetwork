@@ -142,6 +142,7 @@ if __name__ == '__main__':
     # -----------------------------------
     # GREEDY
     # -----------------------------------
+    print("-----------------GREEDY-----------------")
 
     # Con il parametro pack_by è possibile modificare il comportamento della greedy in quei casi in cui
     # un gateway non riesca a coprire tutta la capacità di un sito, di default viene risolto uno zaino binario
@@ -156,7 +157,8 @@ if __name__ == '__main__':
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori, pack_by="capacita")
     ammissibile, reason_of_failure = controlla_ammisibilita(result, sensors)
     if ammissibile:
-        print("\n\n\n-----------------LA SOLUZIONE TROVATA E' AMMISSIBILE-----------------\n\n\n")
+        print("\n\nLa soluzione trovata è ammissibile\n\n")
+        print(f"Il costo della greedy è {greedy_cost}")
     else:
         print("\n\n\n-----------------LA SOLUZIONE TROVATA !!!!!NON!!!!! E' AMMISSIBILE-----------------\n\n\n")
         print(reason_of_failure)
@@ -172,6 +174,7 @@ if __name__ == '__main__':
 
     # calcolo  il MST del risultato
     mst, mst_cost = minimum_spanning_tree(result)
+    print(f"\nIl costo del MST è {round(mst_cost)}")
     # creo il file .html che mostra il MST
     display_mst(mst, result, saving_path)
 
@@ -184,18 +187,21 @@ if __name__ == '__main__':
 
     funzione_obiettivo = greedy_cost + mst_cost
 
-    print(f"\n\nIl costo totale è: {round(funzione_obiettivo)}")
+    print(f"\nIl costo totale è {round(funzione_obiettivo)}")
 
-    print("\n\n\n\n\n\n\nRICERCA LOCALE\n\n\n")
+    print("\n\n\n-----------------RICERCA LOCALE-----------------\n\n\n")
     nuova_soluzione = large_neighborhood_search(result, gateways, sensors)
 
     display_solution(nuova_soluzione, sensors)
     mst_new, mst_cost_new = minimum_spanning_tree(nuova_soluzione)
-    display_mst(mst, result)
-    display_full_solution(mst, result, sensors)
+    display_mst(mst_new, nuova_soluzione)
+    display_full_solution(mst_new, nuova_soluzione, sensors)
 
     funzione_obiettivo_new = costo(nuova_soluzione)
-    print(f"\n\nIl costo totale della nuova soluzione è: {round(funzione_obiettivo_new)}")
+    print(f"\n\nIl costo totale della soluzione dopo la ricerca locale è {round(funzione_obiettivo_new)}")
+
+    print(f"\n\nCosto iniziale: {round(funzione_obiettivo)}, Costo finale: {round(funzione_obiettivo_new)}, "
+          f"la funzione obiettivo è scesa di {round(funzione_obiettivo-funzione_obiettivo_new)}")
 
     # TODO: Idea: aggiungere alla greedy il calcolo del minimum spanning tree (è fattibile?...)
     # La greedy deve poter considerare anche il costo di installare un dispositivo in un determinato sito in

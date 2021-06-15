@@ -175,7 +175,6 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered,
     with open('greedy_output.txt', 'a') as f:
         original_stdout = sys.stdout
         if len(sensors_copy) == 0:
-            print("Non sono rimasti sensori da coprire. Il costo della soluzione è " + str(costo_totale))
             sys.stdout = f
             print("SEED: " + str(get_seed()))
             print("Non sono rimasti sensori da coprire. Il costo della soluzione è " + str(costo_totale))

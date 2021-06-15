@@ -1,4 +1,4 @@
-from utility_functions import distance_by_coord
+from utility_functions import distance_by_coord, get_verbosity
 
 
 def find_reachable_vertices(edge_list, a_vertex):
@@ -127,9 +127,10 @@ def minimum_spanning_tree(result):
 
     # Stampo gli archi selezionati
     costo_totale = 0
-    print("Archi selezionati per il MST:\n")
+    if not get_verbosity().quiet:
+        print("Archi selezionati per il MST:\n")
     for selected_edge in selected:
-        print("{} - {} - {}".format(selected_edge["node_one"], selected_edge["node_two"], selected_edge["costo"]))
+        if not get_verbosity().quiet:
+            print("{} - {} - {}".format(selected_edge["node_one"], selected_edge["node_two"], selected_edge["costo"]))
         costo_totale += selected_edge["costo"]
-    print(f"\n\nIl costo del MST è {round(costo_totale)}")
     return selected, costo_totale
