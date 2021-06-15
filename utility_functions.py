@@ -90,3 +90,15 @@ def get_seed():
 def set_seed(new_seed):
     global random_seed
     random_seed = new_seed
+
+
+gateway_classes = []
+
+
+def get_gateways_classes():
+    return gateway_classes
+
+
+def set_gateways_classes(new_gateway_classes):
+    global gateway_classes
+    gateway_classes = new_gateway_classes

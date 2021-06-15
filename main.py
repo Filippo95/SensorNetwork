@@ -6,9 +6,10 @@ import random as rn
 from math import ceil
 from display_functions import display_sensors, display_solution, display_mst, display_full_solution
 from graph_functions import minimum_spanning_tree
-from utility_functions import print_scenario, get_seed, set_seed, get_verbosity, set_verbosity
+from utility_functions import print_scenario, get_seed, set_seed, get_verbosity, set_verbosity, set_gateways_classes
 from greedy_functions import calcola_scenario, greedy_optimization
 from feasibility_functions import controlla_ammisibilita
+from local_search_functions import large_neighborhood_search, costo
 
 
 # -----------------------------------
@@ -98,6 +99,7 @@ if __name__ == '__main__':
     classe_2 = Gateway(2, 25, 25)
     classe_3 = Gateway(3, 50, 75)
     classe_4 = Gateway(4, 100, 175)
+    set_gateways_classes([classe_0, classe_1, classe_2, classe_3, classe_4])
     num_lowest_class = 500  # Originale: 500
     gateways.append(classe_0)  # Gateway di classe 0
     for i in range(num_lowest_class):
@@ -183,6 +185,17 @@ if __name__ == '__main__':
     funzione_obiettivo = greedy_cost + mst_cost
 
     print(f"\n\nIl costo totale è: {round(funzione_obiettivo)}")
+
+    print("\n\n\n\n\n\n\nRICERCA LOCALE\n\n\n")
+    nuova_soluzione = large_neighborhood_search(result, gateways, sensors)
+
+    display_solution(nuova_soluzione, sensors)
+    mst_new, mst_cost_new = minimum_spanning_tree(nuova_soluzione)
+    display_mst(mst, result)
+    display_full_solution(mst, result, sensors)
+
+    funzione_obiettivo_new = costo(nuova_soluzione)
+    print(f"\n\nIl costo totale della nuova soluzione è: {round(funzione_obiettivo_new)}")
 
     # TODO: Idea: aggiungere alla greedy il calcolo del minimum spanning tree (è fattibile?...)
     # La greedy deve poter considerare anche il costo di installare un dispositivo in un determinato sito in
