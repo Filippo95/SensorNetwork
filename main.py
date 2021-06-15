@@ -1,12 +1,14 @@
 # Progetto Ricerca Operativa - n.46 "Sensor Network" - A.A. 2020-21
 # Andrea Benini, Giacomo Bettini, Filippo Luppi
+import pprint
 import sys
 import os
 import random as rn
 from math import ceil
 from display_functions import display_sensors, display_solution, display_mst, display_full_solution
 from graph_functions import minimum_spanning_tree
-from utility_functions import print_scenario, get_seed, set_seed, get_verbosity, set_verbosity, set_gateways_classes
+from utility_functions import print_scenario, get_seed, set_seed, get_verbosity, set_verbosity, set_gateways_classes,\
+    set_global_sensors
 from greedy_functions import calcola_scenario, greedy_optimization
 from feasibility_functions import controlla_ammisibilita
 from local_search_functions import large_neighborhood_search, costo
@@ -18,9 +20,6 @@ from local_search_functions import large_neighborhood_search, costo
 
 num_sensori = 50  # Quanti sensori generare (di default; si può
 # controllare tramite i parametri da riga di comando)
-
-# lista di sensori
-sensors = []
 
 # lista di gateway
 gateways = []
@@ -86,8 +85,10 @@ if __name__ == '__main__':
     rn.seed(get_seed())
 
     # Creiamo i sensori in maniera pseudo-casuale
+    sensors = []
     for i in range(num_sensori):
         sensors.append(Sensor(i))
+    set_global_sensors(sensors)
 
     # Definiamo il listino dei dispositivi, ordinato
     # secondo le loro capacità massime, e impostiamo
@@ -113,12 +114,15 @@ if __name__ == '__main__':
 
     # Preparo le cartelle per le soluzioni
     saving_path = f"./solutions/{get_seed()}/{num_sensori}/"
+    saving_path_ls = saving_path+"localsearch/"
     if not os.path.isdir("./solutions"):
         os.mkdir("./solutions")
     if not os.path.isdir(f"./solutions/{get_seed()}"):
         os.mkdir(f"./solutions/{get_seed()}")
     if not os.path.isdir(saving_path):
         os.mkdir(saving_path)
+    if not os.path.isdir(saving_path_ls):
+        os.mkdir(saving_path_ls)
 
     # -----------------------------------
     # COSTRUZIONE DELLO SCENARIO
@@ -151,11 +155,7 @@ if __name__ == '__main__':
     # eseguo la greedy passando lo scenario ordinato per rapporto capacità/costo
     result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict, order_by, pack_by)
 
-    # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori)
-
-    # greedy_optimization(sensors, gateways, sens_dict_ord_by_cap, pack_by="capacita")
-    # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori, pack_by="capacita")
-    ammissibile, reason_of_failure = controlla_ammisibilita(result, sensors)
+    ammissibile, reason_of_failure = controlla_ammisibilita(result)
     if ammissibile:
         print("\n\nLa soluzione trovata è ammissibile\n\n")
         print(f"Il costo della greedy è {greedy_cost}")
@@ -165,8 +165,14 @@ if __name__ == '__main__':
         print("\n\n\n-----------------COMPUTAZIONE INTERROTTA-----------------\n\n\n")
         sys.exit()
 
+    # Stampo il dizionario che mostra dove e quali dispositivi ho installato
+    if not get_verbosity().quiet:
+        print("\n\n\n")
+        pp = pprint.PrettyPrinter(indent=3)
+        pp.pprint(result)
+
     # creo il file .html che mostra la soluzione ovvero dove ho installato i vari gateway
-    display_solution(result, sensors, saving_path)
+    display_solution(result, saving_path)
 
     # -----------------------------------
     # MINIMUM SPANNING TREE
@@ -174,6 +180,11 @@ if __name__ == '__main__':
 
     # calcolo  il MST del risultato
     mst, mst_cost = minimum_spanning_tree(result)
+    # stampo gli archi selezionati e i relativi costi
+    if not get_verbosity().quiet:
+        print("Archi selezionati per il MST:\n")
+        for edge in mst:
+            print("{} - {} - {}".format(edge["node_one"], edge["node_two"], edge["costo"]))
     print(f"\nIl costo del MST è {round(mst_cost)}")
     # creo il file .html che mostra il MST
     display_mst(mst, result, saving_path)
@@ -183,19 +194,23 @@ if __name__ == '__main__':
     # -----------------------------------
 
     # creo il file .html che mostra l'intera soluzione
-    display_full_solution(mst, result, sensors, saving_path)
+    display_full_solution(mst, result, saving_path)
 
     funzione_obiettivo = greedy_cost + mst_cost
 
     print(f"\nIl costo totale è {round(funzione_obiettivo)}")
 
-    print("\n\n\n-----------------RICERCA LOCALE-----------------\n\n\n")
-    nuova_soluzione = large_neighborhood_search(result, gateways, sensors)
+    # -----------------------------------
+    # RICERCA LOCALE
+    # -----------------------------------
 
-    display_solution(nuova_soluzione, sensors)
+    print("\n\n\n-----------------RICERCA LOCALE-----------------\n\n\n")
+    nuova_soluzione = large_neighborhood_search(result, gateways)
+
+    display_solution(nuova_soluzione, saving_path_ls)
     mst_new, mst_cost_new = minimum_spanning_tree(nuova_soluzione)
-    display_mst(mst_new, nuova_soluzione)
-    display_full_solution(mst_new, nuova_soluzione, sensors)
+    display_mst(mst_new, nuova_soluzione, saving_path_ls)
+    display_full_solution(mst_new, nuova_soluzione, saving_path_ls)
 
     funzione_obiettivo_new = costo(nuova_soluzione)
     print(f"\n\nIl costo totale della soluzione dopo la ricerca locale è {round(funzione_obiettivo_new)}")
@@ -203,12 +218,13 @@ if __name__ == '__main__':
     print(f"\n\nCosto iniziale: {round(funzione_obiettivo)}, Costo finale: {round(funzione_obiettivo_new)}, "
           f"la funzione obiettivo è scesa di {round(funzione_obiettivo-funzione_obiettivo_new)}")
 
-    # TODO: Idea: aggiungere alla greedy il calcolo del minimum spanning tree (è fattibile?...)
-    # La greedy deve poter considerare anche il costo di installare un dispositivo in un determinato sito in
-    # relazione al costo del minimum spanning tree.
+    # TODO: Aggiungere output su file di testo (simile a greedy_output)
+    # Possibilmente un file di riepilogo sulla cartella dove salvo la prima soluzione e un altro
+    # nella cartella localsearch
 
     # TODO: Idee di cui non siamo troppo convinti:
-    # - Per il test di ammissibiltà, fare anche qualche controllo sul minimum spanning tree?
+    # - Per il test di ammissibilità, fare anche qualche controllo sul minimum spanning tree?
+    # - Considerare anche il costo del MST durante la greedy?
     # - Aggiungere come criterio nella greedy non solo il massimo rapporto capacità/costo,
     # ma anche un ulteriore valore che considera quanti sensori sto coprendo, ossia: se ho un solo sensore di
     # capacità 8 e un gateway di capacità 8, il rapporto capacità/costo è 1.0 (il massimo). Però vorrei mettere

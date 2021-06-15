@@ -23,6 +23,13 @@ def distance_in_2d(sens_one, sens_two):
     return sqrt((y_0 - y_1) ** 2 + (x_0 - x_1) ** 2)
 
 
+def find_sensor_by_id(sensor):
+    for sen in get_global_sensors():
+        if sen.id == sensor:
+            return sen
+    return None
+
+
 # Prende in input due tuple di coordinate e restituisce la loro distanza sulla superficie terrestre
 def distance_by_coord(node_one, node_two):
     # Approssimazione del raggio della Terra in Km
@@ -102,3 +109,16 @@ def get_gateways_classes():
 def set_gateways_classes(new_gateway_classes):
     global gateway_classes
     gateway_classes = new_gateway_classes
+
+
+sensors = []
+
+
+def get_global_sensors():
+    return sensors
+
+
+def set_global_sensors(new_sensors):
+    global sensors
+    sensors = new_sensors
+

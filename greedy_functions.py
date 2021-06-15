@@ -147,7 +147,7 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered,
             # Ho rimosso il check "if a_sensor in sensors_copy", perchè per come abbiamo scritto
             # il codice, quella condizione sarà sempre vera
             sensors_copy.remove(a_sensor)
-        if not get_verbosity().quiet:
+        if get_verbosity().verbose:
             print("\nITERAZIONE: " + str(i - 1))
             for temp in sensors_copy:
                 print(temp.id, end=',')
@@ -158,19 +158,12 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered,
 
     # Stampo l'utilizzo dei dispositivi per classe
     if not get_verbosity().quiet:
-        print("\n\n\n")
         print(f"Sono stati utilizzati:\n"
               f"{utilizzo_gateway[0]} dispositivi di classe 0, costo totale {utilizzo_gateway[0] * 6}\n"
               f"{utilizzo_gateway[1]} dispositivi di classe 1, costo totale {utilizzo_gateway[1] * 14}\n"
               f"{utilizzo_gateway[2]} dispositivi di classe 2, costo totale {utilizzo_gateway[2] * 25}\n"
               f"{utilizzo_gateway[3]} dispositivi di classe 3, costo totale {utilizzo_gateway[3] * 75}\n"
               f"{utilizzo_gateway[4]} dispositivi di classe 4, costo totale {utilizzo_gateway[4] * 175}\n")
-
-    # Stampo il dizionario che mostra dove e quali dispositivi ho installato
-    if not get_verbosity().quiet:
-        print("\n\n\n")
-        pp = pprint.PrettyPrinter(indent=3)
-        pp.pprint(selected)
 
     with open('greedy_output.txt', 'a') as f:
         original_stdout = sys.stdout

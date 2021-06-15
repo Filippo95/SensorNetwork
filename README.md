@@ -10,7 +10,7 @@ Il problema  è composto sostanzialmente da due problemi principali:
    
 2. Come collegare i concentratorri tra di loro per minimizzare il cammino (problema cammino minimo)
 
-###I dispositivi
+### I dispositivi
 Ogni sensore è composto da diversi attributi, tra cui:
 * latitudine
 * longitudine
@@ -33,8 +33,8 @@ Un'altro problema da affrontare è la minimizzazione del costo, quindi scegliere
 
 Al fine di risolvere il problema è stato generato un "catalogo" di gateway, abbiamo inoltre considerato il problema della disponibilità in termini di quantità di gateway, bbiamo ipotizzato di avere diveresi modelli di gateway installabili, che si differenziano per costo e capacità e quantità disponibile.   
 
-##Approcci risolutivi
-###Primo Aprroccio
+## Approcci risolutivi
+### Primo Aprroccio
 Un primo approccio risolutivo del problema è quello che consideera l'utilizzo di una greedy, che come best possibili abbia:
 * massimizzare il rapporto costo/sensori coperti
 * massimizzare il rapporto capacità/costo
@@ -49,7 +49,7 @@ All'interno della greedy vengono quindi affrontati tre problemi:
 In un secondo momento, attraverso l'algoritmo di kruskal viene costruito il grafo minimo di copertura (minimum spanning tree), che ci da informazione su come collegare i dispositivi tra di loro, iporizzando che il costo di collegamento tra un dispositivo gateway ed un'altro dipenda solamente dalla distanza in linea d'aria.    
 
 Le soluzioni trovate vengono poi migliorate attraverso algostimi di ricerca locaale come:
-###Secondo Approccio
+### Secondo Approccio
 Risolvendo il problema, ci siamo resi conto che la soluzione trovata dalla funzione greedy potrebbe essere in realtà non ottima per il problema del MST, quindi innalzare notevolmente il costo di interconnessione dei dispositivi, anche se la scelta fatta dalla greedy è corretta.   
 Questo può capitare in quanto la greedy non ha una visione globale dle problema, ma si limita a risolvere il problema di installazione dei dispositivi.  
 A questo punto quindi abbiamo pensato di dare alla greedy una visione più completa del problema che stiamo risolvendo, quindi inserire ad ogni iterazione della greedy il calcolo del MST quindi la greedy valuta ogni sensore da poter installare minimizzando il costo di installazione del gateway più il costo del MST.   

@@ -2,6 +2,7 @@ import folium
 import random as rn
 from matplotlib import pyplot as plt
 from deprecated import deprecated
+from utility_functions import get_verbosity, find_sensor_by_id
 
 
 # Inutilizzato.
@@ -26,17 +27,17 @@ def plot_graph_old(min_x, max_x, min_y, max_y, sensors):
 
         colors.append(a_sens.id)
 
-        # if verbose:
-        #     center = "center: x={} y={}".format(round(a_sens.longitudine), round(a_sens.latitudine))
-        #     coords = "range: x={}-{} | y={}-{}".format(round(a_sens.longitudine - radius),
-        #                                                round(a_sens.longitudine + radius),
-        #                                                round(a_sens.latitudine - radius),
-        #                                                round(a_sens.latitudine + radius))
-        #     labels.append("id={} r={}\n{}\n{}".format(a_sens.id, round(radius), center, coords))
-        # elif quiet:
-        #     labels.append("{}".format(a_sens.id))
-        # else:
-        #     labels.append("id:{} r={}".format(a_sens.id, round(radius)))
+        if get_verbosity().verbose:
+            center = "center: x={} y={}".format(round(a_sens.longitudine), round(a_sens.latitudine))
+            coords = "range: x={}-{} | y={}-{}".format(round(a_sens.longitudine - radius),
+                                                       round(a_sens.longitudine + radius),
+                                                       round(a_sens.latitudine - radius),
+                                                       round(a_sens.latitudine + radius))
+            labels.append("id={} r={}\n{}\n{}".format(a_sens.id, round(radius), center, coords))
+        elif get_verbosity().quiet:
+            labels.append("{}".format(a_sens.id))
+        else:
+            labels.append("id:{} r={}".format(a_sens.id, round(radius)))
 
         ax.add_artist(plt.Circle((a_sens.longitudine, a_sens.latitudine), radius,
                                  color=plt.cm.get_cmap(color_map_name).colors[index * round(256 / num_sensori)],
@@ -72,14 +73,7 @@ def display_sensors(sensors, dest_folder="./"):
     m.save(dest_folder + '1-sensors.html')
 
 
-def find_sensor_by_id(sensor, sensor_list):
-    for sen in sensor_list:
-        if sen.id == sensor:
-            return sen
-    return None
-
-
-def display_solution(solution, sensor_list, dest_folder="./"):
+def display_solution(solution, dest_folder="./"):
     color_palette = ["#F72585", "#B5179E", "#7209B7", "#560BAD", "#480CA8",
                      "#3A0CA3", "#3F37C9", "#4361EE", "#4895EF", "#4CC9F0"]
 
@@ -94,7 +88,7 @@ def display_solution(solution, sensor_list, dest_folder="./"):
                   ' sensori coperti: ' + str(solution.get(gateway)['sensor_covered']),
         ).add_to(m)
         for sensor in solution.get(gateway)['sensor_covered']:
-            sensore = find_sensor_by_id(sensor, sensor_list)
+            sensore = find_sensor_by_id(sensor)
             folium.Circle(
                 location=(sensore.latitudine, sensore.longitudine),
                 popup='id: ' + str(sensore.id) + ' lat: ' + str(sensore.latitudine) + ' long: ' + str(
@@ -141,7 +135,7 @@ def display_mst(tree, soluzione, dest_folder="./"):
     m.save(dest_folder + '/3-mst.html')
 
 
-def display_full_solution(tree, soluzione, sensors, dest_folder="./"):
+def display_full_solution(tree, soluzione, dest_folder="./"):
     mst_color = "#4CC9F0"
     color_palette = ["#F72585", "#B5179E", "#7209B7", "#560BAD", "#480CA8",
                      "#3A0CA3", "#3F37C9", "#4361EE", "#4895EF"]
@@ -175,7 +169,7 @@ def display_full_solution(tree, soluzione, sensors, dest_folder="./"):
     for gateway in soluzione:
         sensor_color = rn.choice(color_palette)
         for sensor in soluzione.get(gateway)['sensor_covered']:
-            sensore = find_sensor_by_id(sensor, sensors)
+            sensore = find_sensor_by_id(sensor)
             folium.Circle(
                 location=(sensore.latitudine, sensore.longitudine),
                 popup='id: ' + str(sensore.id) + ' lat: ' + str(sensore.latitudine) + ' long: ' + str(

@@ -17,7 +17,7 @@ def costo(solution):
     return costo_totale + costo_mst
 
 
-def destroy(solution, sensors):
+def destroy(solution):
     # Ordino la soluzione per costo del dispositivo decrescente
     solution = {k: v for k, v in sorted(solution.items(),
                                         key=lambda item: item[1]["costo"],
@@ -29,7 +29,7 @@ def destroy(solution, sensors):
     while i < quanti_distruggere:
         key, a_gateway = list(solution.items())[0]
         for sens in a_gateway["sensor_covered"]:
-            sensori_scoperti.append(find_sensor_by_id(sens, sensors))
+            sensori_scoperti.append(find_sensor_by_id(sens))
         classe_gateway_tolti.append(a_gateway["classe"])
         solution.pop(key)
         i += 1
@@ -37,7 +37,7 @@ def destroy(solution, sensors):
     return solution, sensori_scoperti, classe_gateway_tolti
 
 
-def repair(destroyed_solution, sensori_scoperti, gateways, sensors):
+def repair(destroyed_solution, sensori_scoperti, gateways):
     sens_dict = calcola_scenario(sensori_scoperti, gateways)
     new_solution, new_cost = greedy_optimization(sensori_scoperti, gateways, sens_dict)
     # Unisco la soluzione distrutta e il pezzo appena riparato
@@ -46,7 +46,7 @@ def repair(destroyed_solution, sensori_scoperti, gateways, sensors):
         index = max(repaired_solution.keys()) + 1
         repaired_solution[index] = new_solution[a_gateway]
 
-    ammissibile, reason = controlla_ammisibilita(repaired_solution, sensors)
+    ammissibile, reason = controlla_ammisibilita(repaired_solution)
     if not ammissibile:
         print("Questa soluzione NON è ammissibile!!! "+reason)
 
@@ -54,20 +54,20 @@ def repair(destroyed_solution, sensori_scoperti, gateways, sensors):
 
 
 # Ricerca Locale tramite Destroy and Repair
-def large_neighborhood_search(initial_solution, gateways, sensors):
+def large_neighborhood_search(initial_solution, gateways):
     soluzione_corrente = initial_solution
     migliore_soluzione = soluzione_corrente  # Ottimo candidato (migliore finora)
     costo_migliore_soluzione = costo(soluzione_corrente)
     k = 0
-    while k < 10:  # Per ora la StopCondition è fare "n" iterazioni
+    while k < 20:  # Per ora la StopCondition è fare "n" iterazioni
         print(f"--------RICERCA LOCALE: ITERAZIONE {k}--------")
-        destroyed_solution, sensori_scoperti, classe_gateway_tolti = destroy(soluzione_corrente, sensors)
+        destroyed_solution, sensori_scoperti, classe_gateway_tolti = destroy(soluzione_corrente)
         # Aggiungo al listino i gateway che ho rimosso con la destroy
         for a_gateway in classe_gateway_tolti:
             gateways.append(get_gateways_classes()[a_gateway])
         gateways = sorted(gateways, key=lambda item: item.costo, reverse=False)
 
-        soluzione_corrente = repair(destroyed_solution, sensori_scoperti, gateways, sensors)
+        soluzione_corrente = repair(destroyed_solution, sensori_scoperti, gateways)
 
         # Per ora non consideriamo la funzione "accept"
         # if accept(new_solution, soluzione_corrente):
@@ -76,7 +76,7 @@ def large_neighborhood_search(initial_solution, gateways, sensors):
         costo_soluzione_corrente = costo(soluzione_corrente)
         stringa = "Attuale" if costo_soluzione_corrente < costo_migliore_soluzione else "Migliore"
         print(f"Migliore: {round(costo_migliore_soluzione)} | Attuale: {round(costo_soluzione_corrente)} | "
-              f"Scelgo {stringa}")
+              f"Scelgo {stringa}\n")
         if costo_soluzione_corrente < costo_migliore_soluzione:
             migliore_soluzione = soluzione_corrente
             costo_migliore_soluzione = costo_soluzione_corrente

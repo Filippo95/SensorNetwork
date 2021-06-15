@@ -127,10 +127,6 @@ def minimum_spanning_tree(result):
 
     # Stampo gli archi selezionati
     costo_totale = 0
-    if not get_verbosity().quiet:
-        print("Archi selezionati per il MST:\n")
     for selected_edge in selected:
-        if not get_verbosity().quiet:
-            print("{} - {} - {}".format(selected_edge["node_one"], selected_edge["node_two"], selected_edge["costo"]))
         costo_totale += selected_edge["costo"]
     return selected, costo_totale
