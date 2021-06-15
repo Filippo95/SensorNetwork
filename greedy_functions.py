@@ -1,5 +1,7 @@
 import sys
 import pprint
+
+from graph_functions import minimum_spanning_tree
 from utility_functions import distance, get_verbosity, get_seed, set_verbosity
 
 
@@ -73,25 +75,54 @@ def find_covered(sensor, senders, capacita_gateway, find_by="distanza_capacita")
 
 
 # Questa funzione, dato l'array di sensori, crea un dizionario ordinato secondo il parametro order_by.
-def calcola_scenario(sensor_list, gateway_list, order_by="rapp_cap_costo"):
+def calcola_scenario(sensor_list, gateway_list, order_by="rapp_cap_costo", consider_mst=False, selected=None):
     sens_dictionary = {}
+
     for this_sens in sensor_list:
         this_senders = find_senders(sensor_list, this_sens)
         tot_capacita = 0
         num_senders = len(this_senders)
         for temp_sens in this_senders:
             tot_capacita += temp_sens.send_rate
-        rapp_cap_costo = tot_capacita / find_best_gateway(tot_capacita, gateway_list).costo
-        rapp_numsensori_costo = num_senders / find_best_gateway(tot_capacita, gateway_list).costo
-        sens_dictionary[this_sens] = {"senders": this_senders,
-                                      "tot_capacita": tot_capacita,
-                                      "rapp_cap_costo": rapp_cap_costo,
-                                      "rapp_numsensori_costo": rapp_numsensori_costo
-                                      }
+
+        best_gateway=find_best_gateway(tot_capacita, gateway_list)
+        rapp_cap_costo = tot_capacita / best_gateway.costo
+        rapp_numsensori_costo = num_senders / best_gateway.costo
+        if consider_mst:
+            selected_copy = selected.copy()
+
+            selected_copy[len(selected_copy)] = {
+                "sensor_id": this_sens.id,
+                "latitudine": this_sens.latitudine,
+                "longitudine": this_sens.longitudine,
+                "sensor_covered": this_senders
+            }
+            mst, mst_cost = minimum_spanning_tree(selected_copy)
+
+            sens_dictionary[this_sens] = {"senders": this_senders,
+                                          "tot_capacita": tot_capacita,
+                                          "rapp_cap_costo": rapp_cap_costo,
+                                          "rapp_numsensori_costo": rapp_numsensori_costo,
+                                          "score": mst_cost+best_gateway.costogit
+                                          }
+            print(" se seleziono " + str(this_sens.id) + " ha un costo di " + str(
+                mst_cost + find_best_gateway(tot_capacita, gateway_list).costo))
+
+        else:
+            sens_dictionary[this_sens] = {"senders": this_senders,
+                                          "tot_capacita": tot_capacita,
+                                          "rapp_cap_costo": rapp_cap_costo,
+                                          "rapp_numsensori_costo": rapp_numsensori_costo,
+                                          "score": 0
+                                          }
         if get_verbosity().more_verbose:
             print(f"\nIl sensore {this_sens.id} è nel raggio di {num_senders} sensori, " +
                   f"che hanno una capacità totale di {tot_capacita} {this_sens.send_rate_unit}")
 
+    if consider_mst:
+        return {k: v for k, v in sorted(sens_dictionary.items(),
+                                        key=lambda item: item[1]["score"],
+                                        reverse=False)}
     return {k: v for k, v in sorted(sens_dictionary.items(),
                                     key=lambda item: item[1][order_by],
                                     reverse=True)}
@@ -99,7 +130,8 @@ def calcola_scenario(sensor_list, gateway_list, order_by="rapp_cap_costo"):
 
 def greedy_optimization(sensors, gateways, sens_dict_ordered,
                         order_by="rapp_cap_costo",
-                        pack_by="distanza_capacita"):
+                        pack_by="distanza_capacita",
+                        consider_mst=False):
     # Di default, seleziono per primi i siti in cui ho rapporto capacità/costo maggiore
     # (o rapporto numsensori/costo maggiore, dipende dal parametro order_by)
     selected = {}
@@ -108,8 +140,12 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered,
     costo_totale = 0
     i = 0
     while len(sens_dict_ordered) > 0:
-        (where, temp_val) = list(sens_dict_ordered.items())[0]
 
+        (where, temp_val) = list(sens_dict_ordered.items())[0]
+        print("stampo lo scenario:")
+        for w, sen in list(sens_dict_ordered.items()):
+            print(str(w.id) +"->"+str(sen["score"]))
+        print("ho scelto: " + str(where.id) + " con uno score di: " + str(temp_val["score"]))
         which_gateway = find_best_gateway(temp_val["tot_capacita"], gateways)
         if which_gateway.id != 0:  # Ho disponibilità illimitata dei gateway di classe 0
             gateways.remove(which_gateway)
@@ -154,7 +190,14 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered,
             print("\n")
 
         # aggiorno lo scenario dopo l'assegnazione, e dopo aver rimosso quelli già assegnati
-        sens_dict_ordered = calcola_scenario(sensors_copy, gateways, order_by=order_by)
+        if consider_mst:
+            sens_dict_ordered = calcola_scenario(sensors_copy,
+                                                 gateways,
+                                                 order_by="score",
+                                                 consider_mst=True,
+                                                 selected=selected)
+        else:
+            sens_dict_ordered = calcola_scenario(sensors_copy, gateways, order_by=order_by)
 
     # Stampo l'utilizzo dei dispositivi per classe
     if not get_verbosity().quiet:

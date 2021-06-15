@@ -146,7 +146,7 @@ if __name__ == '__main__':
     # con una greedy che seleziona i sensori da coprire per primi secondo il loro rapporto capacità/distanza
     # (ossia si coprono per primi i sensori che hanno capacità grandi e sono vicini al gateway che stiamo installando).
     # eseguo la greedy passando lo scenario ordinato per rapporto capacità/costo
-    result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict, order_by, pack_by)
+    result, greedy_cost = greedy_optimization(sensors, gateways, sens_dict, order_by, pack_by, consider_mst=True)
 
     # greedy_optimization(sensors, gateways, sens_dict_ord_by_num_sensori)
 
