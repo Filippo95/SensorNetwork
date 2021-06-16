@@ -1,3 +1,5 @@
+import os
+import sys
 from math import sin, cos, sqrt, atan2, radians
 from deprecated import deprecated
 
@@ -72,6 +74,56 @@ def print_scenario(a_dict):
         print("Rapporto capacità/costo: " + str(temp_rapp_cap_costo))
         print("Rapporto numsensori/costo: " + str(temp_rapp_numsensori_costo))
     print("\n\n")
+
+
+def prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter, no_display):
+    if not os.path.isdir("./solutions"):
+        os.mkdir("./solutions")
+
+    if no_display:
+        text_output_path_grafici = f"./solutions/graph_data.csv"
+
+        if not os.path.isfile(text_output_path_grafici):
+            with open(text_output_path_grafici, 'w') as f:
+                original_stdout = sys.stdout
+                sys.stdout = f
+                print("seed,numsensori,order_by,pack_by,num_iter_ls,"
+                      "first_greedy,first_mst,first_tot,"
+                      "ls_greedy,ls_mst,ls_tot,risparmio")
+                sys.stdout = original_stdout
+
+        return None, None, None, text_output_path_grafici
+
+    saving_path = f"./solutions/{num_sensori}/{get_seed()}/{order_by}+{pack_by}+{num_iter}/"
+    saving_path_ls = saving_path + "localsearch/"
+    text_output_path = saving_path + "output.txt"
+    text_output_path_grafici = f"./solutions/graph_data.csv"
+
+    if not os.path.isdir(f"./solutions/{num_sensori}"):
+        os.mkdir(f"./solutions/{num_sensori}")
+
+    if not os.path.isdir(f"./solutions/{num_sensori}/{get_seed()}"):
+        os.mkdir(f"./solutions/{num_sensori}/{get_seed()}")
+
+    if not os.path.isdir(saving_path):
+        os.mkdir(saving_path)
+
+    if not os.path.isdir(saving_path_ls):
+        os.mkdir(saving_path_ls)
+
+    if os.path.isfile(text_output_path):
+        os.remove(text_output_path)
+
+    if not os.path.isfile(text_output_path_grafici):
+        with open(text_output_path_grafici, 'w') as f:
+            original_stdout = sys.stdout
+            sys.stdout = f
+            print("seed,numsensori,order_by,pack_by,num_iter_ls,"
+                  "first_greedy,first_mst,first_tot,"
+                  "ls_greedy,ls_mst,ls_tot,risparmio")
+            sys.stdout = original_stdout
+
+    return saving_path, saving_path_ls, text_output_path, text_output_path_grafici
 
 
 verbosity = Verbosity(False, False, False)

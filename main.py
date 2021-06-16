@@ -2,16 +2,16 @@
 # Andrea Benini, Giacomo Bettini, Filippo Luppi
 import pprint
 import sys
-import os
 import random as rn
 from math import ceil
-from display_functions import display_sensors, display_solution, display_mst, display_full_solution, display_difference_between_solutions
+from display_functions import display_sensors, display_solution, display_mst, display_full_solution, \
+    display_difference_between_solutions
 from graph_functions import minimum_spanning_tree
-from utility_functions import print_scenario, get_seed, set_seed, get_verbosity, set_verbosity, set_gateways_classes,\
-    set_global_sensors
+from utility_functions import print_scenario, get_seed, set_seed, get_verbosity, set_verbosity, \
+    set_gateways_classes, set_global_sensors, prepara_cartelle_e_file
 from greedy_functions import calcola_scenario, greedy_optimization
 from feasibility_functions import controlla_ammisibilita
-from local_search_functions import large_neighborhood_search, costo
+from local_search_functions import large_neighborhood_search
 
 
 # -----------------------------------
@@ -56,25 +56,23 @@ class Gateway:
 # ----MAIN
 if __name__ == '__main__':
     # Come far partire il programma da riga di comando:
-    # python main.py <numsensori> <seed> <order_by> <pack_by> [-v] [-vv] [-q]
-    # O passo sia il numero dei sensori sia il seed, oppure
-    # il programma utilizzerà entrambi i valori di default.
-    # In questo caso devo passare anche il parametro order_by e pack_by
-    # Passare uno solo dei modificatori dell'output (-v, -vv o -q).
+    # python main.py <numsensori> <seed> <order_by> <pack_by> <num_iter_ls> [-v] [-vv] [-q] [--no-display]
+    # I parametri fra parentesi angolari vanno passati o tutti insieme o nessuno.
+    # Passare al massimo uno solo dei modificatori dell'output (-v, -vv o -q).
 
     order_by = "rapp_cap_costo"
     pack_by = "distanza_capacita"
+    num_iter_local_search = 20
+    no_display = False
 
     if len(sys.argv) > 5:
         num_sensori = int(sys.argv[1])
         set_seed(int(sys.argv[2]))
-        order_by = str(sys.argv[3])
-        pack_by = str(sys.argv[4])
+        order_by = str(sys.argv[3])  # order_by può essere: rapp_cap_costo | rapp_numsensori_costo
+        pack_by = str(sys.argv[4])   # pack_by può essere: distanza_capacita | capacita
         num_iter_local_search = int(sys.argv[5])
-        # L'ordinamento può essere fatto per:
-        # rapp_cap_costo | rapp_numsensori_costo
-        # pack_by può essere:
-        # distanza_capacita | capacita
+
+    no_display = "--no-display" in sys.argv
 
     set_verbosity(
         "-q" in sys.argv,
@@ -84,6 +82,9 @@ if __name__ == '__main__':
 
     # Imposto il seed
     rn.seed(get_seed())
+
+    # Per la stampa su file
+    original_stdout = sys.stdout
 
     # Creiamo i sensori in maniera pseudo-casuale
     sensors = []
@@ -113,17 +114,9 @@ if __name__ == '__main__':
     for i in range(ceil(num_lowest_class/125)):
         gateways.append(classe_4)  # Gateway di classe 4
 
-    # Preparo le cartelle per le soluzioni
-    saving_path = f"./solutions/{get_seed()}/{num_sensori}/"
-    saving_path_ls = saving_path+"localsearch/"
-    if not os.path.isdir("./solutions"):
-        os.mkdir("./solutions")
-    if not os.path.isdir(f"./solutions/{get_seed()}"):
-        os.mkdir(f"./solutions/{get_seed()}")
-    if not os.path.isdir(saving_path):
-        os.mkdir(saving_path)
-    if not os.path.isdir(saving_path_ls):
-        os.mkdir(saving_path_ls)
+    # Preparo le cartelle e i file per le soluzioni
+    saving_path, saving_path_ls, text_output_path, text_output_path_grafici = \
+        prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter_local_search, no_display)
 
     # -----------------------------------
     # COSTRUZIONE DELLO SCENARIO
@@ -142,7 +135,8 @@ if __name__ == '__main__':
         print_scenario(sens_dict)
 
     # creo il file .html che mostra i sensori sulla mappa
-    display_sensors(sensors, saving_path)
+    if not no_display:
+        display_sensors(sensors, saving_path)
 
     # -----------------------------------
     # GREEDY
@@ -165,6 +159,17 @@ if __name__ == '__main__':
         print(reason_of_failure)
         print("\n\n\n-----------------COMPUTAZIONE INTERROTTA-----------------\n\n\n")
         sys.exit()
+    if not no_display:
+        with open(text_output_path, 'a') as f:
+            if ammissibile:
+                sys.stdout = f
+                print(f"Prima esecuzione:")
+                print(f"Il costo della greedy è {greedy_cost}")
+                sys.stdout = original_stdout
+            else:
+                sys.stdout = f
+                print("Sono rimasti sensori da coprire. Nessuna soluzione ammissibile trovata!")
+                sys.stdout = original_stdout
 
     # Stampo il dizionario che mostra dove e quali dispositivi ho installato
     if not get_verbosity().quiet:
@@ -172,14 +177,15 @@ if __name__ == '__main__':
         pp = pprint.PrettyPrinter(indent=3)
         pp.pprint(result)
 
-    # creo il file .html che mostra la soluzione ovvero dove ho installato i vari gateway
-    display_solution(result, saving_path)
+    # creo il file .html che mostra la soluzione (ovvero dove ho installato i vari gateway)
+    if not no_display:
+        display_solution(result, saving_path)
 
     # -----------------------------------
     # MINIMUM SPANNING TREE
     # -----------------------------------
 
-    # calcolo  il MST del risultato
+    # calcolo il MST del risultato
     mst, mst_cost = minimum_spanning_tree(result)
     # stampo gli archi selezionati e i relativi costi
     if not get_verbosity().quiet:
@@ -187,42 +193,79 @@ if __name__ == '__main__':
         for edge in mst:
             print("{} - {} - {}".format(edge["node_one"], edge["node_two"], edge["costo"]))
     print(f"\nIl costo del MST è {round(mst_cost)}")
+
+    if not no_display:
+        with open(text_output_path, 'a') as f:
+            sys.stdout = f
+            print(f"Il costo del MST è {round(mst_cost)}")
+            sys.stdout = original_stdout
+
     # creo il file .html che mostra il MST
-    display_mst(mst, result, saving_path)
+    if not no_display:
+        display_mst(mst, result, saving_path)
 
     # -----------------------------------
     # COSTO TOTALE
     # -----------------------------------
 
     # creo il file .html che mostra l'intera soluzione
-    display_full_solution(mst, result, saving_path)
+    if not no_display:
+        display_full_solution(mst, result, saving_path)
 
     funzione_obiettivo = greedy_cost + mst_cost
 
     print(f"\nIl costo totale è {round(funzione_obiettivo)}")
+
+    if not no_display:
+        with open(text_output_path, 'a') as f:
+            sys.stdout = f
+            print(f"Il costo totale è {round(funzione_obiettivo)}")
+            sys.stdout = original_stdout
 
     # -----------------------------------
     # RICERCA LOCALE
     # -----------------------------------
 
     print("\n\n\n-----------------RICERCA LOCALE-----------------\n\n\n")
-    nuova_soluzione = large_neighborhood_search(result, gateways, num_iter_local_search)
+    nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(result, gateways, num_iter_local_search)
 
-    display_solution(nuova_soluzione, saving_path_ls)
+    if not no_display:
+        display_solution(nuova_soluzione, saving_path_ls)
+
     mst_new, mst_cost_new = minimum_spanning_tree(nuova_soluzione)
-    display_mst(mst_new, nuova_soluzione, saving_path_ls)
-    display_full_solution(mst_new, nuova_soluzione, saving_path_ls)
 
-    funzione_obiettivo_new = costo(nuova_soluzione)
+    if not no_display:
+        display_mst(mst_new, nuova_soluzione, saving_path_ls)
+        display_full_solution(mst_new, nuova_soluzione, saving_path_ls)
+
+    greedy_cost_new = funzione_obiettivo_new-mst_cost_new
+    risparmio = funzione_obiettivo-funzione_obiettivo_new
+
+    if not no_display:
+        with open(text_output_path, 'a') as f:
+            sys.stdout = f
+            print(f"\nDopo la ricerca locale Destroy and Repair con {num_iter_local_search} iterazioni:")
+            print(f"Il costo della greedy è {round(greedy_cost_new)}")
+            print(f"Il costo del MST è {round(mst_cost_new)}")
+            print(f"Il costo totale è {round(funzione_obiettivo_new)}")
+            print(f"La funzione obiettivo è scesa di {round(risparmio)}")
+            sys.stdout = original_stdout
+
     print(f"\n\nIl costo totale della soluzione dopo la ricerca locale è {round(funzione_obiettivo_new)}")
 
     print(f"\n\nCosto iniziale: {round(funzione_obiettivo)}, Costo finale: {round(funzione_obiettivo_new)}, "
-          f"la funzione obiettivo è scesa di {round(funzione_obiettivo-funzione_obiettivo_new)}")
-    display_difference_between_solutions(nuova_soluzione, mst_new, result, mst, saving_path_ls)
+          f"la funzione obiettivo è scesa di {round(risparmio)}")
+    if not no_display:
+        display_difference_between_solutions(nuova_soluzione, mst_new, result, mst, saving_path_ls)
 
-    # TODO: Aggiungere output su file di testo (simile a greedy_output)
-    # Possibilmente un file di riepilogo sulla cartella dove salvo la prima soluzione e un altro
-    # nella cartella localsearch
+    # Stampa sul file csv il riepilogo dell'esecuzione, si potrà usare per creare grafici e statistiche
+    # Al momento non c'è controllo sulle righe duplicate
+    with open(text_output_path_grafici, 'a') as f:
+        sys.stdout = f
+        print(f"{get_seed()},{num_sensori},{order_by},{pack_by},{num_iter_local_search},"
+              f"{round(greedy_cost)},{round(mst_cost)},{round(funzione_obiettivo)},"
+              f"{round(greedy_cost_new)},{round(mst_cost_new)},{round(funzione_obiettivo_new)},{round(risparmio)}")
+        sys.stdout = original_stdout
 
     # TODO: Idee di cui non siamo troppo convinti:
     # - Per il test di ammissibilità, fare anche qualche controllo sul minimum spanning tree?

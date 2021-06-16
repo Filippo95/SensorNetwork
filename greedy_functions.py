@@ -1,6 +1,4 @@
-import sys
-import pprint
-from utility_functions import distance, get_verbosity, get_seed, set_verbosity
+from utility_functions import distance, get_verbosity, set_verbosity
 
 
 # Questa funzione, dato un sensore in input, trova tutti i sensori
@@ -148,7 +146,7 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered,
             # il codice, quella condizione sarà sempre vera
             sensors_copy.remove(a_sensor)
         if get_verbosity().verbose:
-            print("\nITERAZIONE: " + str(i - 1))
+            print(f"\nITERAZIONE {i}")
             for temp in sensors_copy:
                 print(temp.id, end=',')
             print("\n")
@@ -165,18 +163,4 @@ def greedy_optimization(sensors, gateways, sens_dict_ordered,
               f"{utilizzo_gateway[3]} dispositivi di classe 3, costo totale {utilizzo_gateway[3] * 75}\n"
               f"{utilizzo_gateway[4]} dispositivi di classe 4, costo totale {utilizzo_gateway[4] * 175}\n")
 
-    with open('greedy_output.txt', 'a') as f:
-        original_stdout = sys.stdout
-        if len(sensors_copy) == 0:
-            sys.stdout = f
-            print("SEED: " + str(get_seed()))
-            print("Non sono rimasti sensori da coprire. Il costo della soluzione è " + str(costo_totale))
-            print("\n")
-            sys.stdout = original_stdout
-        else:
-            sys.stdout = f
-            print("SEED: " + str(get_seed()))
-            print("Sono rimasti sensori da coprire. Nessuna soluzione ammissibile trovata!")
-            print("\n")
-            sys.stdout = original_stdout
     return selected, costo_totale

@@ -7,7 +7,7 @@ from feasibility_functions import controlla_ammisibilita
 tasso_distruzione = 30  # In percentuale, ad es. 10, o 30
 
 
-def costo(solution):
+def costo_totale_soluzione(solution):
     costo_totale = 0
     for a_gateway in solution.values():
         costo_totale += a_gateway["costo"]
@@ -54,13 +54,13 @@ def repair(destroyed_solution, sensori_scoperti, gateways):
 
 
 # Ricerca Locale tramite Destroy and Repair
-def large_neighborhood_search(initial_solution, gateways,num_iterazioni=20):
+def large_neighborhood_search(initial_solution, gateways, num_iterazioni=20):
     soluzione_corrente = initial_solution
     migliore_soluzione = soluzione_corrente  # Ottimo candidato (migliore finora)
-    costo_migliore_soluzione = costo(soluzione_corrente)
+    costo_migliore_soluzione = costo_totale_soluzione(soluzione_corrente)
     k = 0
-    while k < num_iterazioni:  # Per ora la StopCondition è fare "n" iterazioni
-        print(f"--------RICERCA LOCALE: ITERAZIONE {k}--------")
+    while k < num_iterazioni:  # La StopCondition è fare "n" iterazioni
+        print(f"--------RICERCA LOCALE: ITERAZIONE {k+1}--------")
         destroyed_solution, sensori_scoperti, classe_gateway_tolti = destroy(soluzione_corrente)
         # Aggiungo al listino i gateway che ho rimosso con la destroy
         for a_gateway in classe_gateway_tolti:
@@ -73,7 +73,8 @@ def large_neighborhood_search(initial_solution, gateways,num_iterazioni=20):
         # if accept(new_solution, soluzione_corrente):
         #     soluzione_corrente = new_solution
         #     k += 1
-        costo_soluzione_corrente = costo(soluzione_corrente)
+        #     continue
+        costo_soluzione_corrente = costo_totale_soluzione(soluzione_corrente)
         stringa = "Attuale" if costo_soluzione_corrente < costo_migliore_soluzione else "Migliore"
         print(f"Migliore: {round(costo_migliore_soluzione)} | Attuale: {round(costo_soluzione_corrente)} | "
               f"Scelgo {stringa}\n")
@@ -83,4 +84,4 @@ def large_neighborhood_search(initial_solution, gateways,num_iterazioni=20):
 
         k += 1
 
-    return migliore_soluzione
+    return migliore_soluzione, costo_migliore_soluzione

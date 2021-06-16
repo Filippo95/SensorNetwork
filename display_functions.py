@@ -100,7 +100,7 @@ def display_solution(solution, dest_folder="./"):
                 fill_color=color
             ).add_to(m)
 
-    m.save(dest_folder + '2-solution.html')
+    m.save(dest_folder + '2-greedy.html')
 
 
 def display_mst(tree, soluzione, dest_folder="./"):
@@ -192,10 +192,10 @@ def display_full_solution(tree, soluzione, dest_folder="./"):
 
 
 def display_difference_between_solutions(nuova_soluzione, mst_new, vecchia_sol, mst_old, dest_folder):
-    mst_color = "#b70909"# rosso
+    mst_color = "#b70909"  # rosso
     color = "#b70909"
 
-    mst_new_color = "#095ab7" #blu
+    mst_new_color = "#095ab7"  # blu
     color_new = "#095ab7"
 
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
@@ -281,4 +281,4 @@ def display_difference_between_solutions(nuova_soluzione, mst_new, vecchia_sol, 
                             weight=2,
                             opacity=0.5).add_to(m)
 
-    m.save(dest_folder + '4-full-differences.html')
+    m.save(dest_folder + '5-full-differences.html')
