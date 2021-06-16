@@ -5,7 +5,7 @@ import sys
 import os
 import random as rn
 from math import ceil
-from display_functions import display_sensors, display_solution, display_mst, display_full_solution
+from display_functions import display_sensors, display_solution, display_mst, display_full_solution, display_difference_between_solutions
 from graph_functions import minimum_spanning_tree
 from utility_functions import print_scenario, get_seed, set_seed, get_verbosity, set_verbosity, set_gateways_classes,\
     set_global_sensors
@@ -65,11 +65,12 @@ if __name__ == '__main__':
     order_by = "rapp_cap_costo"
     pack_by = "distanza_capacita"
 
-    if len(sys.argv) > 4:
+    if len(sys.argv) > 5:
         num_sensori = int(sys.argv[1])
         set_seed(int(sys.argv[2]))
         order_by = str(sys.argv[3])
         pack_by = str(sys.argv[4])
+        num_iter_local_search = int(sys.argv[5])
         # L'ordinamento può essere fatto per:
         # rapp_cap_costo | rapp_numsensori_costo
         # pack_by può essere:
@@ -205,7 +206,7 @@ if __name__ == '__main__':
     # -----------------------------------
 
     print("\n\n\n-----------------RICERCA LOCALE-----------------\n\n\n")
-    nuova_soluzione = large_neighborhood_search(result, gateways)
+    nuova_soluzione = large_neighborhood_search(result, gateways, num_iter_local_search)
 
     display_solution(nuova_soluzione, saving_path_ls)
     mst_new, mst_cost_new = minimum_spanning_tree(nuova_soluzione)
@@ -217,6 +218,7 @@ if __name__ == '__main__':
 
     print(f"\n\nCosto iniziale: {round(funzione_obiettivo)}, Costo finale: {round(funzione_obiettivo_new)}, "
           f"la funzione obiettivo è scesa di {round(funzione_obiettivo-funzione_obiettivo_new)}")
+    display_difference_between_solutions(nuova_soluzione, mst_new, result, mst, saving_path_ls)
 
     # TODO: Aggiungere output su file di testo (simile a greedy_output)
     # Possibilmente un file di riepilogo sulla cartella dove salvo la prima soluzione e un altro

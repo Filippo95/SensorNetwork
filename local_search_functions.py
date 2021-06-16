@@ -54,12 +54,12 @@ def repair(destroyed_solution, sensori_scoperti, gateways):
 
 
 # Ricerca Locale tramite Destroy and Repair
-def large_neighborhood_search(initial_solution, gateways):
+def large_neighborhood_search(initial_solution, gateways,num_iterazioni=20):
     soluzione_corrente = initial_solution
     migliore_soluzione = soluzione_corrente  # Ottimo candidato (migliore finora)
     costo_migliore_soluzione = costo(soluzione_corrente)
     k = 0
-    while k < 20:  # Per ora la StopCondition è fare "n" iterazioni
+    while k < num_iterazioni:  # Per ora la StopCondition è fare "n" iterazioni
         print(f"--------RICERCA LOCALE: ITERAZIONE {k}--------")
         destroyed_solution, sensori_scoperti, classe_gateway_tolti = destroy(soluzione_corrente)
         # Aggiungo al listino i gateway che ho rimosso con la destroy

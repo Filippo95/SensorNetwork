@@ -189,3 +189,96 @@ def display_full_solution(tree, soluzione, dest_folder="./"):
                             opacity=0.8).add_to(m)
 
     m.save(dest_folder + '4-full.html')
+
+
+def display_difference_between_solutions(nuova_soluzione, mst_new, vecchia_sol, mst_old, dest_folder):
+    mst_color = "#b70909"# rosso
+    color = "#b70909"
+
+    mst_new_color = "#095ab7" #blu
+    color_new = "#095ab7"
+
+    m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
+
+    for index, gateway in enumerate(nuova_soluzione):
+        folium.Marker(
+            location=[nuova_soluzione.get(gateway)['latitudine'], nuova_soluzione.get(gateway)['longitudine']],
+            icon=folium.DivIcon(
+                html=f"""<div style=" font-weight: bold; font-size: large;">{"{:.0f}".format(index)}</div>"""),
+            popup='id: ' + str(index) + '<br>'
+                                        ' latitudine: ' + str(nuova_soluzione.get(gateway)['latitudine']) +
+                  ' longitudine: ' + str(nuova_soluzione.get(gateway)['longitudine']) +
+                  ' sensori coperti: ' + str(nuova_soluzione.get(gateway)['sensor_covered']),
+        ).add_to(m)
+
+    for arco in mst_new:
+        id_gateway1 = arco["node_one"]
+        id_gateway2 = arco["node_two"]
+        gateway1 = nuova_soluzione[id_gateway1]
+        gateway2 = nuova_soluzione[id_gateway2]
+        loc = [(gateway1["latitudine"], gateway1["longitudine"]),
+               (gateway2["latitudine"], gateway2["longitudine"])]
+
+        folium.PolyLine(loc,
+                        color=mst_color,
+                        weight=10,
+                        opacity=0.5).add_to(m)
+
+    for gateway in nuova_soluzione:
+        sensor_color = color
+        for sensor in nuova_soluzione.get(gateway)['sensor_covered']:
+            sensore = find_sensor_by_id(sensor)
+            folium.Circle(
+                location=(sensore.latitudine, sensore.longitudine),
+                popup='id: ' + str(sensore.id) + ' lat: ' + str(sensore.latitudine) + ' long: ' + str(
+                    sensore.longitudine),
+                radius=float(500),
+                color=sensor_color,
+                labels=str(sensore.id),
+                fill=True,
+                fill_color=sensor_color
+            ).add_to(m)
+            loc = [(nuova_soluzione.get(gateway)["latitudine"], nuova_soluzione.get(gateway)["longitudine"]),
+                   (sensore.latitudine, sensore.longitudine)]
+
+            folium.PolyLine(loc,
+                            color=sensor_color,
+                            weight=2,
+                            opacity=0.8).add_to(m)
+
+    for arco in mst_old:
+        id_gateway1 = arco["node_one"]
+        id_gateway2 = arco["node_two"]
+        gateway1 = vecchia_sol[id_gateway1]
+        gateway2 = vecchia_sol[id_gateway2]
+        loc = [(gateway1["latitudine"], gateway1["longitudine"]),
+               (gateway2["latitudine"], gateway2["longitudine"])]
+
+        folium.PolyLine(loc,
+                        color=mst_new_color,
+                        weight=10,
+                        opacity=0.5).add_to(m)
+
+    for gateway in vecchia_sol:
+        sensor_color = color_new
+        for sensor in vecchia_sol.get(gateway)['sensor_covered']:
+            sensore = find_sensor_by_id(sensor)
+            folium.Circle(
+                location=(sensore.latitudine, sensore.longitudine),
+                popup='id: ' + str(sensore.id) + ' lat: ' + str(sensore.latitudine) + ' long: ' + str(
+                    sensore.longitudine),
+                radius=float(500),
+                color=sensor_color,
+                labels=str(sensore.id),
+                fill=True,
+                fill_color=sensor_color
+            ).add_to(m)
+            loc = [(vecchia_sol.get(gateway)["latitudine"], vecchia_sol.get(gateway)["longitudine"]),
+                   (sensore.latitudine, sensore.longitudine)]
+
+            folium.PolyLine(loc,
+                            color=sensor_color,
+                            weight=2,
+                            opacity=0.5).add_to(m)
+
+    m.save(dest_folder + '4-full-differences.html')
