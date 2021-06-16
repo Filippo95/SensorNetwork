@@ -1,5 +1,7 @@
+import branca
 import folium
 import random as rn
+from branca.element import MacroElement, Template
 from matplotlib import pyplot as plt
 from deprecated import deprecated
 from utility_functions import get_verbosity, find_sensor_by_id
@@ -77,46 +79,127 @@ def display_solution(solution, dest_folder="./"):
     color_palette = ["#F72585", "#B5179E", "#7209B7", "#560BAD", "#480CA8",
                      "#3A0CA3", "#3F37C9", "#4361EE", "#4895EF", "#4CC9F0"]
 
+    gateway_colors = ['green', 'lightblue', 'pink', 'orange', 'red']
+
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
     for gateway in solution:
-        color = rn.choice(color_palette)
+        this_gw = solution.get(gateway)
+        gateway_color = gateway_colors[this_gw['classe']]
         folium.Marker(
-            location=[solution.get(gateway)['latitudine'], solution.get(gateway)['longitudine']],
-            popup='id: ' + str(solution.get(gateway)['sensor_id']) +
-                  ' latitudine: ' + str(solution.get(gateway)['latitudine']) +
-                  ' longitudine: ' + str(solution.get(gateway)['longitudine']) +
-                  ' sensori coperti: ' + str(solution.get(gateway)['sensor_covered']),
+            location=(this_gw['latitudine'], this_gw['longitudine']),
+            popup=f'<nobr>id: {this_gw["sensor_id"]}</nobr>, '
+                  f'<nobr>classe: {this_gw["classe"]}</nobr>, '
+                  f'<nobr>costo: {this_gw["costo"]}</nobr>, '
+                  f'sensori coperti: {this_gw["sensor_covered"]}',
+            icon=folium.Icon(icon="glyphicon-map-marker", color=gateway_color)
         ).add_to(m)
+
         for sensor in solution.get(gateway)['sensor_covered']:
             sensore = find_sensor_by_id(sensor)
+            sensor_color = rn.choice(color_palette)
             folium.Circle(
                 location=(sensore.latitudine, sensore.longitudine),
                 popup='id: ' + str(sensore.id) + ' lat: ' + str(sensore.latitudine) + ' long: ' + str(
                     sensore.longitudine),
                 radius=float(sensore.portata),
-                color=color,
+                color=sensor_color,
                 labels=str(sensore.id),
                 fill=True,
-                fill_color=color
+                fill_color=sensor_color
             ).add_to(m)
+
+    legenda = """
+    {% macro html(this, kwargs) %}
+
+    <!doctype html>
+    <html lang="it">
+    <body>
+
+    <div id='maplegend' class='maplegend' 
+        style='position: absolute; z-index:9999; border:2px solid grey; background-color:rgba(255, 255, 255, 0.8);
+         border-radius:6px; padding: 10px; font-size:20px; right: 20px; top: 20px;'>
+
+    <div class='legend-title'>Dispositivi installati</div>
+    <div class='legend-scale'>
+      <ul class='legend-labels'>
+        <li><span style='background:green;opacity:0.7;'></span>Classe 0, Costo 6</li>
+        <li><span style='background:lightblue;opacity:0.7;'></span>Classe 1, Costo 14</li>
+        <li><span style='background:pink;opacity:0.7;'></span>Classe 2, Costo 25</li>
+        <li><span style='background:orange;opacity:0.7;'></span>Classe 3, Costo 75</li>
+        <li><span style='background:red;opacity:0.7;'></span>Classe 4, Costo 175</li>
+      </ul>
+    </div>
+    </div>
+
+    </body>
+    </html>
+
+    <style type='text/css'>
+      .maplegend .legend-title {
+        text-align: left;
+        margin-bottom: 5px;
+        font-weight: bold;
+        font-size: 90%;
+        }
+      .maplegend .legend-scale ul {
+        margin: 0;
+        margin-bottom: 5px;
+        padding: 0;
+        float: left;
+        list-style: none;
+        }
+      .maplegend .legend-scale ul li {
+        font-size: 80%;
+        list-style: none;
+        margin-left: 0;
+        line-height: 18px;
+        margin-bottom: 2px;
+        }
+      .maplegend ul.legend-labels li span {
+        display: block;
+        float: left;
+        height: 16px;
+        width: 30px;
+        margin-right: 5px;
+        margin-left: 0;
+        border: 1px solid #999;
+        }
+      .maplegend .legend-source {
+        font-size: 80%;
+        color: #777;
+        clear: both;
+        }
+      .maplegend a {
+        color: #777;
+        }
+    </style>
+    {% endmacro %}"""
+
+    macro = MacroElement()
+    macro._template = Template(legenda)
+
+    m.get_root().add_child(macro)
 
     m.save(dest_folder + '2-greedy.html')
 
 
 def display_mst(tree, soluzione, dest_folder="./"):
     mst_color = "#F72585"
+    font_colors = ['green', 'lightblue', 'pink', 'orange', 'red']
 
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
 
     for index, gateway in enumerate(soluzione):
+        this_gw = soluzione.get(gateway)
+        font_color = font_colors[this_gw['classe']]
         folium.Marker(
-            location=[soluzione.get(gateway)['latitudine'], soluzione.get(gateway)['longitudine']],
+            location=(this_gw['latitudine'], this_gw['longitudine']),
             icon=folium.DivIcon(
-                html=f"""<div style=" font-weight: bold; font-size: large;">{"{:.0f}".format(index)}</div>"""),
-            popup='id: ' + str(index) + '<br>'
-                                        ' latitudine: ' + str(soluzione.get(gateway)['latitudine']) +
-                  ' longitudine: ' + str(soluzione.get(gateway)['longitudine']) +
-                  ' sensori coperti: ' + str(soluzione.get(gateway)['sensor_covered']),
+                html=f"""<div style="font-weight: bold; font-size: 25px; color: {font_color}; -webkit-text-stroke: 1px black">{index}</div>"""),
+            popup=f'<nobr>id: {this_gw["sensor_id"]}</nobr>, '
+                  f'<nobr>classe: {this_gw["classe"]}</nobr>, '
+                  f'<nobr>costo: {this_gw["costo"]}</nobr>, '
+                  f'sensori coperti: {this_gw["sensor_covered"]}',
         ).add_to(m)
 
     for arco in tree:
@@ -132,6 +215,78 @@ def display_mst(tree, soluzione, dest_folder="./"):
                         weight=5,
                         opacity=0.8).add_to(m)
 
+    legenda = """
+        {% macro html(this, kwargs) %}
+
+        <!doctype html>
+        <html lang="it">
+        <body>
+
+        <div id='maplegend' class='maplegend' 
+            style='position: absolute; z-index:9999; border:2px solid grey; background-color:rgba(255, 255, 255, 0.8);
+             border-radius:6px; padding: 10px; font-size:20px; right: 20px; top: 20px;'>
+
+        <div class='legend-title'>Dispositivi installati</div>
+        <div class='legend-scale'>
+          <ul class='legend-labels'>
+            <li><span style='background:green;opacity:0.7;'></span>Classe 0, Costo 6</li>
+            <li><span style='background:lightblue;opacity:0.7;'></span>Classe 1, Costo 14</li>
+            <li><span style='background:pink;opacity:0.7;'></span>Classe 2, Costo 25</li>
+            <li><span style='background:orange;opacity:0.7;'></span>Classe 3, Costo 75</li>
+            <li><span style='background:red;opacity:0.7;'></span>Classe 4, Costo 175</li>
+          </ul>
+        </div>
+        </div>
+
+        </body>
+        </html>
+
+        <style type='text/css'>
+          .maplegend .legend-title {
+            text-align: left;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 90%;
+            }
+          .maplegend .legend-scale ul {
+            margin: 0;
+            margin-bottom: 5px;
+            padding: 0;
+            float: left;
+            list-style: none;
+            }
+          .maplegend .legend-scale ul li {
+            font-size: 80%;
+            list-style: none;
+            margin-left: 0;
+            line-height: 18px;
+            margin-bottom: 2px;
+            }
+          .maplegend ul.legend-labels li span {
+            display: block;
+            float: left;
+            height: 16px;
+            width: 30px;
+            margin-right: 5px;
+            margin-left: 0;
+            border: 1px solid #999;
+            }
+          .maplegend .legend-source {
+            font-size: 80%;
+            color: #777;
+            clear: both;
+            }
+          .maplegend a {
+            color: #777;
+            }
+        </style>
+        {% endmacro %}"""
+
+    macro = MacroElement()
+    macro._template = Template(legenda)
+
+    m.get_root().add_child(macro)
+
     m.save(dest_folder + '/3-mst.html')
 
 
@@ -139,18 +294,21 @@ def display_full_solution(tree, soluzione, dest_folder="./"):
     mst_color = "#4CC9F0"
     color_palette = ["#F72585", "#B5179E", "#7209B7", "#560BAD", "#480CA8",
                      "#3A0CA3", "#3F37C9", "#4361EE", "#4895EF"]
+    font_colors = ['green', 'lightblue', 'pink', 'orange', 'red']
 
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
 
     for index, gateway in enumerate(soluzione):
+        this_gw = soluzione.get(gateway)
+        font_color = font_colors[this_gw['classe']]
         folium.Marker(
-            location=[soluzione.get(gateway)['latitudine'], soluzione.get(gateway)['longitudine']],
+            location=(this_gw['latitudine'], this_gw['longitudine']),
             icon=folium.DivIcon(
-                html=f"""<div style=" font-weight: bold; font-size: large;">{"{:.0f}".format(index)}</div>"""),
-            popup='id: ' + str(index) + '<br>'
-                                        ' latitudine: ' + str(soluzione.get(gateway)['latitudine']) +
-                  ' longitudine: ' + str(soluzione.get(gateway)['longitudine']) +
-                  ' sensori coperti: ' + str(soluzione.get(gateway)['sensor_covered']),
+                html=f"""<div style="font-weight: bold; font-size: 25px; color: {font_color}; -webkit-text-stroke: 1px black">{index}</div>"""),
+            popup=f'<nobr>id: {this_gw["sensor_id"]}</nobr>, '
+                  f'<nobr>classe: {this_gw["classe"]}</nobr>, '
+                  f'<nobr>costo: {this_gw["costo"]}</nobr>, '
+                  f'sensori coperti: {this_gw["sensor_covered"]}',
         ).add_to(m)
 
     for arco in tree:
@@ -188,6 +346,78 @@ def display_full_solution(tree, soluzione, dest_folder="./"):
                             weight=2,
                             opacity=0.8).add_to(m)
 
+    legenda = """
+        {% macro html(this, kwargs) %}
+
+        <!doctype html>
+        <html lang="it">
+        <body>
+
+        <div id='maplegend' class='maplegend' 
+            style='position: absolute; z-index:9999; border:2px solid grey; background-color:rgba(255, 255, 255, 0.8);
+             border-radius:6px; padding: 10px; font-size:20px; right: 20px; top: 20px;'>
+
+        <div class='legend-title'>Dispositivi installati</div>
+        <div class='legend-scale'>
+          <ul class='legend-labels'>
+            <li><span style='background:green;opacity:0.7;'></span>Classe 0, Costo 6</li>
+            <li><span style='background:lightblue;opacity:0.7;'></span>Classe 1, Costo 14</li>
+            <li><span style='background:pink;opacity:0.7;'></span>Classe 2, Costo 25</li>
+            <li><span style='background:orange;opacity:0.7;'></span>Classe 3, Costo 75</li>
+            <li><span style='background:red;opacity:0.7;'></span>Classe 4, Costo 175</li>
+          </ul>
+        </div>
+        </div>
+
+        </body>
+        </html>
+
+        <style type='text/css'>
+          .maplegend .legend-title {
+            text-align: left;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 90%;
+            }
+          .maplegend .legend-scale ul {
+            margin: 0;
+            margin-bottom: 5px;
+            padding: 0;
+            float: left;
+            list-style: none;
+            }
+          .maplegend .legend-scale ul li {
+            font-size: 80%;
+            list-style: none;
+            margin-left: 0;
+            line-height: 18px;
+            margin-bottom: 2px;
+            }
+          .maplegend ul.legend-labels li span {
+            display: block;
+            float: left;
+            height: 16px;
+            width: 30px;
+            margin-right: 5px;
+            margin-left: 0;
+            border: 1px solid #999;
+            }
+          .maplegend .legend-source {
+            font-size: 80%;
+            color: #777;
+            clear: both;
+            }
+          .maplegend a {
+            color: #777;
+            }
+        </style>
+        {% endmacro %}"""
+
+    macro = MacroElement()
+    macro._template = Template(legenda)
+
+    m.get_root().add_child(macro)
+
     m.save(dest_folder + '4-full.html')
 
 
@@ -198,17 +428,21 @@ def display_difference_between_solutions(nuova_soluzione, mst_new, vecchia_sol, 
     mst_new_color = "#095ab7"  # blu
     color_new = "#095ab7"
 
+    font_colors = ['green', 'lightblue', 'pink', 'orange', 'red']
+
     m = folium.Map(location=[44.50, 11], tiles="OpenStreetMap", zoom_start=8.5)
 
     for index, gateway in enumerate(nuova_soluzione):
+        this_gw = nuova_soluzione.get(gateway)
+        font_color = font_colors[this_gw['classe']]
         folium.Marker(
-            location=[nuova_soluzione.get(gateway)['latitudine'], nuova_soluzione.get(gateway)['longitudine']],
+            location=(this_gw['latitudine'], this_gw['longitudine']),
             icon=folium.DivIcon(
-                html=f"""<div style=" font-weight: bold; font-size: large;">{"{:.0f}".format(index)}</div>"""),
-            popup='id: ' + str(index) + '<br>'
-                                        ' latitudine: ' + str(nuova_soluzione.get(gateway)['latitudine']) +
-                  ' longitudine: ' + str(nuova_soluzione.get(gateway)['longitudine']) +
-                  ' sensori coperti: ' + str(nuova_soluzione.get(gateway)['sensor_covered']),
+                html=f"""<div style="font-weight: bold; font-size: 25px; color: {font_color}; -webkit-text-stroke: 1px black">{index}</div>"""),
+            popup=f'<nobr>id: {this_gw["sensor_id"]}</nobr>, '
+                  f'<nobr>classe: {this_gw["classe"]}</nobr>, '
+                  f'<nobr>costo: {this_gw["costo"]}</nobr>, '
+                  f'sensori coperti: {this_gw["sensor_covered"]}',
         ).add_to(m)
 
     for arco in mst_new:
@@ -280,5 +514,80 @@ def display_difference_between_solutions(nuova_soluzione, mst_new, vecchia_sol, 
                             color=sensor_color,
                             weight=2,
                             opacity=0.5).add_to(m)
+
+    legenda = """
+        {% macro html(this, kwargs) %}
+
+        <!doctype html>
+        <html lang="it">
+        <body>
+
+        <div id='maplegend' class='maplegend' 
+            style='position: absolute; z-index:9999; border:2px solid grey; background-color:rgba(255, 255, 255, 0.8);
+             border-radius:6px; padding: 10px; font-size:20px; right: 20px; top: 20px;'>
+
+        <div class='legend-title'>Dispositivi installati</div>
+        <div class='legend-scale'>
+          <ul class='legend-labels'>
+            <li><span style='background:green;opacity:0.7;'></span>Classe 0, Costo 6</li>
+            <li><span style='background:lightblue;opacity:0.7;'></span>Classe 1, Costo 14</li>
+            <li><span style='background:pink;opacity:0.7;'></span>Classe 2, Costo 25</li>
+            <li><span style='background:orange;opacity:0.7;'></span>Classe 3, Costo 75</li>
+            <li><span style='background:red;opacity:0.7;'></span>Classe 4, Costo 175</li>
+            <div class='legend-title'>MST</div>
+            <li><span style='background:#b70909;opacity:0.7;'></span>Vecchio MST</li>
+            <li><span style='background:#095ab7;opacity:0.7;'></span>Nuovo MST</li>
+          </ul>
+        </div>
+        </div>
+
+        </body>
+        </html>
+
+        <style type='text/css'>
+          .maplegend .legend-title {
+            text-align: left;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 90%;
+            }
+          .maplegend .legend-scale ul {
+            margin: 0;
+            margin-bottom: 5px;
+            padding: 0;
+            float: left;
+            list-style: none;
+            }
+          .maplegend .legend-scale ul li {
+            font-size: 80%;
+            list-style: none;
+            margin-left: 0;
+            line-height: 18px;
+            margin-bottom: 2px;
+            }
+          .maplegend ul.legend-labels li span {
+            display: block;
+            float: left;
+            height: 16px;
+            width: 30px;
+            margin-right: 5px;
+            margin-left: 0;
+            border: 1px solid #999;
+            }
+          .maplegend .legend-source {
+            font-size: 80%;
+            color: #777;
+            clear: both;
+            }
+          .maplegend a {
+            color: #777;
+            }
+        </style>
+        {% endmacro %}"""
+
+    macro = MacroElement()
+    macro._template = Template(legenda)
+
+    m.get_root().add_child(macro)
 
     m.save(dest_folder + '5-full-differences.html')

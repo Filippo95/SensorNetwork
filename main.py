@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     order_by = "rapp_cap_costo"
     pack_by = "distanza_capacita"
-    num_iter_local_search = 20
+    num_iter_local_search = 10
     no_display = False
 
     if len(sys.argv) > 5:

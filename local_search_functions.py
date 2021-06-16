@@ -54,7 +54,7 @@ def repair(destroyed_solution, sensori_scoperti, gateways):
 
 
 # Ricerca Locale tramite Destroy and Repair
-def large_neighborhood_search(initial_solution, gateways, num_iterazioni=20):
+def large_neighborhood_search(initial_solution, gateways, num_iterazioni=10):
     soluzione_corrente = initial_solution
     migliore_soluzione = soluzione_corrente  # Ottimo candidato (migliore finora)
     costo_migliore_soluzione = costo_totale_soluzione(soluzione_corrente)
