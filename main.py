@@ -1,6 +1,5 @@
 # Progetto Ricerca Operativa - n.46 "Sensor Network" - A.A. 2020-21
 # Andrea Benini, Giacomo Bettini, Filippo Luppi
-import pprint
 import sys
 import random as rn
 from math import ceil
@@ -8,11 +7,11 @@ from display_functions import display_sensors, display_solution, display_mst, di
     display_difference_between_solutions
 from graph_functions import minimum_spanning_tree
 from utility_functions import print_scenario, get_seed, set_seed, get_verbosity, set_verbosity, \
-    set_gateways_classes, set_global_sensors, prepara_cartelle_e_file
+    set_gateways_classes, set_global_sensors, prepara_cartelle_e_file, print_greedy_result, print_mst_result
 from greedy_functions import calcola_scenario, greedy_optimization
 from feasibility_functions import controlla_ammisibilita
 from local_search_functions import large_neighborhood_search
-
+import time
 
 # -----------------------------------
 # VARIABILI GLOBALI
@@ -37,7 +36,7 @@ class Sensor:
         self.id = an_id
         self.longitudine = rn.uniform(min_x, max_x)
         self.latitudine = rn.uniform(min_y, max_y)
-        self.portata = rn.uniform(5000, 15000)  # distanza raggio di copertura
+        self.portata = rn.uniform(5000, 15000)  # raggio di copertura in metri
         self.send_rate = rn.randint(1, 10)  # quanti msg
         self.send_rate_unit = "msg/s"
 
@@ -55,9 +54,10 @@ class Gateway:
 
 # ----MAIN
 if __name__ == '__main__':
+    start_time = time.time()
     # Come far partire il programma da riga di comando:
     # python main.py <numsensori> <seed> <order_by> <pack_by> <num_iter_ls> [-v] [-vv] [-q] [--no-display]
-    # I parametri fra parentesi angolari vanno passati o tutti insieme o nessuno.
+    # I parametri fra parentesi angolari vanno passati tutti.
     # Passare al massimo uno solo dei modificatori dell'output (-v, -vv o -q).
 
     order_by = "rapp_cap_costo"
@@ -66,11 +66,19 @@ if __name__ == '__main__':
     no_display = False
 
     if len(sys.argv) > 5:
-        num_sensori = int(sys.argv[1])
-        set_seed(int(sys.argv[2]))
-        order_by = str(sys.argv[3])  # order_by può essere: rapp_cap_costo | rapp_numsensori_costo
-        pack_by = str(sys.argv[4])   # pack_by può essere: distanza_capacita | capacita
-        num_iter_local_search = int(sys.argv[5])
+        try:
+            num_sensori = int(sys.argv[1])
+            set_seed(int(sys.argv[2]))
+            order_by = str(sys.argv[3])  # order_by può essere: rapp_cap_costo | rapp_numsensori_costo
+            pack_by = str(sys.argv[4])   # pack_by può essere: distanza_capacita | capacita
+            num_iter_local_search = int(sys.argv[5])
+        except ValueError as e:
+            print(e)
+            print("\nUso:")
+            print("python main.py <numsensori> <seed> <order_by> <pack_by> <num_iter_ls> [-v|-vv|-q] [--no-display]")
+            print("I parametri fra parentesi angolari vanno passati tutti.")
+            print("Passare al massimo uno solo dei modificatori dell'output (-v, -vv o -q).")
+            sys.exit(-1)
 
     no_display = "--no-display" in sys.argv
 
@@ -103,24 +111,41 @@ if __name__ == '__main__':
     classe_3 = Gateway(3, 50, 75)
     classe_4 = Gateway(4, 100, 175)
     set_gateways_classes([classe_0, classe_1, classe_2, classe_3, classe_4])
-    num_lowest_class = 500  # Originale: 500
+    num_class_1 = 200  # Originale: 500
+    num_class_2 = ceil(num_class_1/5)
+    num_class_3 = ceil(num_class_1/25)
+    num_class_4 = ceil(num_class_1/125)
     gateways.append(classe_0)  # Gateway di classe 0
-    for i in range(num_lowest_class):
+    for i in range(num_class_1):
         gateways.append(classe_1)  # Gateway di classe 1
-    for i in range(ceil(num_lowest_class/5)):
+    for i in range(num_class_2):
         gateways.append(classe_2)  # Gateway di classe 2
-    for i in range(ceil(num_lowest_class/25)):
+    for i in range(num_class_3):
         gateways.append(classe_3)  # Gateway di classe 3
-    for i in range(ceil(num_lowest_class/125)):
+    for i in range(num_class_4):
         gateways.append(classe_4)  # Gateway di classe 4
+
+    print("-----------------INIZIALIZZAZIONE-----------------\n\n")
+    print("Listino dei dispositivi:")
+    print(f"Classe 0 -> Costo: {classe_0.costo}, Disponibilità: \u221e")
+    print(f"Classe 1 -> Costo: {classe_1.costo}, Disponibilità: {num_class_1}")
+    print(f"Classe 2 -> Costo: {classe_2.costo}, Disponibilità: {num_class_2}")
+    print(f"Classe 3 -> Costo: {classe_3.costo}, Disponibilità: {num_class_3}")
+    print(f"Classe 4 -> Costo: {classe_4.costo}, Disponibilità: {num_class_4}")
+    print("\n")
 
     # Preparo le cartelle e i file per le soluzioni
     saving_path, saving_path_ls, text_output_path, text_output_path_grafici = \
         prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter_local_search, no_display)
 
+    init_time = time.time() - start_time
+    if not get_verbosity().quiet:
+        print(f"Inizializzazione completata in {round(init_time)} secondi")
+
     # -----------------------------------
     # COSTRUZIONE DELLO SCENARIO
     # -----------------------------------
+    greedy_time_start = time.time()
 
     # Crea un dizionario dei sensori con le relative proprietà, di default i sensori vengono ordinati
     # secondo il rapporto capacità/costo (quanta capacità totale posso coprire posizionando un gateway in
@@ -130,9 +155,7 @@ if __name__ == '__main__':
     # di installazione del gateway che può coprire la capacità richiesta.
     sens_dict = calcola_scenario(sensors, gateways, order_by=order_by)
     if get_verbosity().verbose:
-        print("\n\n\n\n\n---------------------------------------------------\n\n\n\n\n")
-        print("SCENARIO - ORDINATO PER: "+order_by)
-        print_scenario(sens_dict)
+        print_scenario(sens_dict, order_by)
 
     # creo il file .html che mostra i sensori sulla mappa
     if not no_display:
@@ -159,6 +182,7 @@ if __name__ == '__main__':
         print(reason_of_failure)
         print("\n\n\n-----------------COMPUTAZIONE INTERROTTA-----------------\n\n\n")
         sys.exit()
+
     if not no_display:
         with open(text_output_path, 'a') as f:
             if ammissibile:
@@ -172,27 +196,26 @@ if __name__ == '__main__':
                 sys.stdout = original_stdout
 
     # Stampo il dizionario che mostra dove e quali dispositivi ho installato
-    if not get_verbosity().quiet:
-        print("\n\n\n")
-        pp = pprint.PrettyPrinter(indent=3)
-        pp.pprint(result)
+    print_greedy_result(result)
 
     # creo il file .html che mostra la soluzione (ovvero dove ho installato i vari gateway)
     if not no_display:
         display_solution(result, saving_path)
 
+    greedy_time = time.time() - greedy_time_start
+    if not get_verbosity().quiet:
+        print(f"Prima greedy completata in {round(greedy_time)} secondi")
+
     # -----------------------------------
     # MINIMUM SPANNING TREE
     # -----------------------------------
+    mst_time_start = time.time()
 
     # calcolo il MST del risultato
     mst, mst_cost = minimum_spanning_tree(result)
     # stampo gli archi selezionati e i relativi costi
-    if not get_verbosity().quiet:
-        print("Archi selezionati per il MST:\n")
-        for edge in mst:
-            print("{} - {} - {}".format(edge["node_one"], edge["node_two"], edge["costo"]))
     print(f"\nIl costo del MST è {round(mst_cost)}")
+    print_mst_result(mst)
 
     if not no_display:
         with open(text_output_path, 'a') as f:
@@ -203,6 +226,10 @@ if __name__ == '__main__':
     # creo il file .html che mostra il MST
     if not no_display:
         display_mst(mst, result, saving_path)
+
+    mst_time = time.time() - mst_time_start
+    if not get_verbosity().quiet:
+        print(f"Primo MST completato in {round(mst_time)} secondi")
 
     # -----------------------------------
     # COSTO TOTALE
@@ -225,6 +252,7 @@ if __name__ == '__main__':
     # -----------------------------------
     # RICERCA LOCALE
     # -----------------------------------
+    local_search_time_start = time.time()
 
     print("\n\n\n-----------------RICERCA LOCALE-----------------\n\n\n")
     nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(result, gateways, num_iter_local_search)
@@ -254,18 +282,40 @@ if __name__ == '__main__':
     print(f"\n\nIl costo totale della soluzione dopo la ricerca locale è {round(funzione_obiettivo_new)}")
 
     print(f"\n\nCosto iniziale: {round(funzione_obiettivo)}, Costo finale: {round(funzione_obiettivo_new)}, "
-          f"la funzione obiettivo è scesa di {round(risparmio)}")
+          f"la funzione obiettivo si è ridotta di {round(risparmio)}")
     if not no_display:
         display_difference_between_solutions(nuova_soluzione, mst_new, result, mst, saving_path_ls)
 
+    local_search_time = time.time() - local_search_time_start
+    if not get_verbosity().quiet:
+        print(f"\nRicerca locale Destroy and Repair completata in {round(local_search_time)} secondi")
+
     # Stampa sul file csv il riepilogo dell'esecuzione, si potrà usare per creare grafici e statistiche
-    # Al momento non c'è controllo sulle righe duplicate
-    with open(text_output_path_grafici, 'a') as f:
-        sys.stdout = f
-        print(f"{get_seed()},{num_sensori},{order_by},{pack_by},{num_iter_local_search},"
-              f"{round(greedy_cost)},{round(mst_cost)},{round(funzione_obiettivo)},"
-              f"{round(greedy_cost_new)},{round(mst_cost_new)},{round(funzione_obiettivo_new)},{round(risparmio)}")
-        sys.stdout = original_stdout
+    # Non vengono inserite righe duplicate
+    with open(text_output_path_grafici, 'r+') as f:
+        output_string = \
+            f"{get_seed()},{num_sensori},{order_by},{pack_by},{num_iter_local_search}," + \
+            f"{round(greedy_cost)},{round(mst_cost)},{round(funzione_obiettivo)}," + \
+            f"{round(greedy_cost_new)},{round(mst_cost_new)},{round(funzione_obiettivo_new)},{round(risparmio)}," + \
+            f"{num_class_1}"
+        a_line = f.readline()[:-1]  # viene letto anche il carattere \n, che va ignorato
+        already_written = False
+        while a_line != '' and not already_written:
+            if a_line == output_string:
+                already_written = True
+            a_line = f.readline()[:-1]
+
+        if not already_written:
+            sys.stdout = f
+            print(output_string)
+            sys.stdout = original_stdout
+            print("\nSoluzione aggiunta al file .csv")
+        else:
+            print("\nSoluzione non aggiunta al file .csv, è già presente")
+
+    end_time = time.time() - start_time
+    if not get_verbosity().quiet:
+        print(f"\nComputazione completata in {round(end_time)} secondi")
 
     # TODO: Idee di cui non siamo troppo convinti:
     # - Per il test di ammissibilità, fare anche qualche controllo sul minimum spanning tree?

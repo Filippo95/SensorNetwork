@@ -1,10 +1,11 @@
 import os
 import sys
+import pprint
 from math import sin, cos, sqrt, atan2, radians
 from deprecated import deprecated
 
 
-# classe di supporto per controllare la quanità
+# classe di supporto per controllare la quantità
 # di output stampato a video
 class Verbosity:
     def __init__(self, quiet, verbose, more_verbose):
@@ -59,7 +60,9 @@ def distance(sens_one, sens_two):
                              (sens_two.latitudine, sens_two.longitudine))
 
 
-def print_scenario(a_dict):
+def print_scenario(a_dict, order_by):
+    print("\n\n\n\n\n---------------------------------------------------\n\n\n\n\n")
+    print("SCENARIO - ORDINATO PER: " + order_by)
     for temp_sens in a_dict.keys():
         print("\nSensore " + str(temp_sens.id) + ":")
         temp_val = a_dict[temp_sens]
@@ -76,6 +79,32 @@ def print_scenario(a_dict):
     print("\n\n")
 
 
+def print_greedy_result(result):
+    if get_verbosity().verbose:
+        print("\n\n\n")
+        print("Dispositivi installati dalla greedy:\n")
+        pp = pprint.PrettyPrinter(indent=3)
+        pp.pprint(result)
+    elif not get_verbosity().quiet:  # Se ho verbosity "normale" stampo solo i primi 3
+        print("\n\n\n")
+        print("Dispositivi installati dalla greedy (parziale):\n")
+        pp = pprint.PrettyPrinter(indent=3)
+        pp.pprint(dict(list(result.items())[:3]))
+        print("\t\t.\n\t\t.\n\t\t.\n")
+
+
+def print_mst_result(mst):
+    if get_verbosity().verbose:
+        print("\n\n\nArchi selezionati per il MST:\n")
+        for edge in mst:
+            print(f"{edge['node_one']} - {edge['node_two']} - Costo {edge['costo']}")
+    elif not get_verbosity().quiet:  # Se ho verbosity "normale" stampo solo i primi 3
+        print("\n\n\nArchi selezionati per il MST (parziale):\n")
+        for edge in mst[:3]:
+            print(f"{edge['node_one']} - {edge['node_two']} - Costo {edge['costo']}")
+        print("\t.\n\t.\n\t.\n")
+
+
 def prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter, no_display):
     if not os.path.isdir("./solutions"):
         os.mkdir("./solutions")
@@ -89,7 +118,7 @@ def prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter, no_display
                 sys.stdout = f
                 print("seed,numsensori,order_by,pack_by,num_iter_ls,"
                       "first_greedy,first_mst,first_tot,"
-                      "ls_greedy,ls_mst,ls_tot,risparmio")
+                      "ls_greedy,ls_mst,ls_tot,risparmio,num_gw_class_1")
                 sys.stdout = original_stdout
 
         return None, None, None, text_output_path_grafici
