@@ -59,7 +59,8 @@ def large_neighborhood_search(initial_solution, gateways, num_iterazioni=10):
     migliore_soluzione = soluzione_corrente  # Ottimo candidato (migliore finora)
     costo_migliore_soluzione = costo_totale_soluzione(soluzione_corrente)
     k = 0
-    while k < num_iterazioni:  # La StopCondition è fare "n" iterazioni
+    no_improvement = 0
+    while k < num_iterazioni and no_improvement < 3:  # 3 ricerche consecutive senza miglioramento, max "n" iterazioni
         print(f"--------RICERCA LOCALE: ITERAZIONE {k+1}--------")
         destroyed_solution, sensori_scoperti, classe_gateway_tolti = destroy(soluzione_corrente)
         # Aggiungo al listino i gateway che ho rimosso con la destroy
@@ -74,13 +75,18 @@ def large_neighborhood_search(initial_solution, gateways, num_iterazioni=10):
         #     soluzione_corrente = new_solution
         #     k += 1
         #     continue
+
         costo_soluzione_corrente = costo_totale_soluzione(soluzione_corrente)
         stringa = "Attuale" if costo_soluzione_corrente < costo_migliore_soluzione else "Migliore"
         print(f"Migliore: {round(costo_migliore_soluzione)} | Attuale: {round(costo_soluzione_corrente)} | "
               f"Scelgo {stringa}\n")
+
         if costo_soluzione_corrente < costo_migliore_soluzione:
             migliore_soluzione = soluzione_corrente
             costo_migliore_soluzione = costo_soluzione_corrente
+            no_improvement = 0
+        else:
+            no_improvement += 1
 
         k += 1
 

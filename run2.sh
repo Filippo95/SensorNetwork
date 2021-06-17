@@ -12,7 +12,9 @@ do
     python3 main.py $sensors $seed "rapp_cap_costo" "capacita" 10 -q --no-display
     python3 main.py $sensors $seed "rapp_numsensori_costo" "distanza_capacita" 10 -q --no-display
     python3 main.py $sensors $seed "rapp_numsensori_costo" "capacita" 10 -q --no-display
-    sensors=${$sensors + 100}
+    echo "----------------------------------------------------------------------------------FINITO CON $sensors SENSORI"
+    sensors=$((sensors + 100))
   done
-  seed=${$seed + 1}
+  echo "-------------------------------------------------------------------------------------------FINITO IL SEED $seed"
+  seed=$((seed + 1))
 done

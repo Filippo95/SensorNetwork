@@ -125,7 +125,8 @@ if __name__ == '__main__':
     for i in range(num_class_4):
         gateways.append(classe_4)  # Gateway di classe 4
 
-    print("-----------------INIZIALIZZAZIONE-----------------\n\n")
+    print("-----------------INIZIALIZZAZIONE-----------------")
+    print(f"Numero di sensori: {num_sensori}\n\n")
     print("Listino dei dispositivi:")
     print(f"Classe 0 -> Costo: {classe_0.costo}, Disponibilità: \u221e")
     print(f"Classe 1 -> Costo: {classe_1.costo}, Disponibilità: {num_class_1}")
@@ -298,7 +299,7 @@ if __name__ == '__main__':
             f"{round(greedy_cost)},{round(mst_cost)},{round(funzione_obiettivo)}," + \
             f"{round(greedy_cost_new)},{round(mst_cost_new)},{round(funzione_obiettivo_new)},{round(risparmio)}," + \
             f"{num_class_1}"
-        a_line = f.readline()[:-1]  # viene letto anche il carattere \n, che va ignorato
+        a_line = f.readline()[:-1]  # viene letto anche il carattere \n, che va ignorato (solo su Windows)
         already_written = False
         while a_line != '' and not already_written:
             if a_line == output_string:
