@@ -171,7 +171,7 @@ Verifico che la lista dei vertici aperti non sia nulla:
     
 Richiamo ricorsivamente la stessa funzione con vertice corrente il vertice selezionato come prossimo 
 
-##Controllo ammissibilità 
+## Controllo ammissibilità 
 A questo punto, siamo riusciti a trovare delle soluzioni che però non abbiamo la certezza che siano ammissibili.   
 Per chiarire questo abbiamo bisogno di definire i criteri di ammissibilità delle soluzioni, ovvero cos'è che differenzia una soluzione ammissibile da una non ammissibile.     
 Una soluzione ammissibile deve:
@@ -194,10 +194,10 @@ def controlla_ammisibilita(solution):
     return True, "OK"
 ```
 
-##Ricerche locali 
+## Ricerche locali 
 A questo punto, siamo riusciti a trovare delle soluzioni che rispetta i criteri di ammissibilità, ha un alberto di copertura di costo minimo (MST), però può essere ancora migliorata in termini di costo.     
 Per fare questo abbiamo utilizzato due tecniche di ricerca locale.
-###Large neighborhood search
+### Large neighborhood search
 Questa tecnica si ricerca locale cerca di trovare soluzioni migliori vicine alla soluzione di partenza. L'intorno di una soluzione è l'insieme di soluzioni ammissibili ottenute da modifiche relativamente semplici alla soluzione originale.    
 Le strategie di Large Neighborhood Search fanno parte della famiglia di Very Larghe Neighborhood Search, determinano l'intorno tramite una operazione di destroy e di rapair.    
 * L'operatore destroy distrugge parte della soluzione corrente, scelta attraverso una procedura non deterministica in modo che la parte modificata vari ad ogni iterazione.
@@ -212,7 +212,7 @@ Se la soluzione nuova ottenuta ha un costo (costo di installazione dei gateway +
 
 
 ### Altra
-##Rappresentazioni grafiche delle soluzioni
+## Rappresentazioni grafiche delle soluzioni
 Per aiutarci nella comprensione di cioè che l'algoritmo restituisce, abbiamo utilizzato una libreria python chiamata folium che permette agilmente di creare mappe con grafi e altri elementi grafici.     
 Abbiamo quindi creato diverse rappresentazioni:
 * i sensori: questa rappresentazione ci permette di visualizzare dove sono posizionati i sensori e il loroo raggio di copeertura. 
@@ -225,11 +225,11 @@ Abbiamo quindi creato diverse rappresentazioni:
   ![alt text](./img/full.png)
 * full-difference: rappresentiamo due soluzione complete per verificare come sono cambiate, questa rappresentazione viene utilizzata dopo la ricerca locale per verificare le differenze tra la soluzione originale e la soluzione migliore trovata.           
   ![alt text](./img/difference.png)
-##Computazioni
+## Computazioni
 
 
 
-##Conclusioni e Grafici
+## Conclusioni e Grafici
 
     
 
