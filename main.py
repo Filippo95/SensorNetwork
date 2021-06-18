@@ -256,8 +256,11 @@ if __name__ == '__main__':
     local_search_time_start = time.time()
 
     print("\n\n\n-----------------RICERCA LOCALE-----------------\n\n\n")
-    nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(result, gateways, num_iter_local_search,'random')
+    nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(result, gateways, num_iter_local_search,'costo')
 
+    # eseguo la ricerca locale in modo random
+    nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(nuova_soluzione, gateways, num_iter_local_search,
+                                                                        'random')
     if not no_display:
         display_solution(nuova_soluzione, saving_path_ls)
 
@@ -267,8 +270,8 @@ if __name__ == '__main__':
         display_mst(mst_new, nuova_soluzione, saving_path_ls)
         display_full_solution(mst_new, nuova_soluzione, saving_path_ls)
 
-    greedy_cost_new = funzione_obiettivo_new-mst_cost_new
-    risparmio = funzione_obiettivo-funzione_obiettivo_new
+    greedy_cost_new = funzione_obiettivo_new - mst_cost_new
+    risparmio = funzione_obiettivo - funzione_obiettivo_new
 
     if not no_display:
         with open(text_output_path, 'a') as f:
