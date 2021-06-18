@@ -17,7 +17,7 @@ import time
 # VARIABILI GLOBALI
 # -----------------------------------
 
-num_sensori = 50  # Quanti sensori generare (di default; si può
+num_sensori =200  # Quanti sensori generare (di default; si può
 # controllare tramite i parametri da riga di comando)
 
 # lista di gateway
@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     order_by = "rapp_cap_costo"
     pack_by = "distanza_capacita"
-    num_iter_local_search = 10
+    num_iter_local_search = 50
     no_display = False
 
     if len(sys.argv) > 5:
@@ -256,7 +256,7 @@ if __name__ == '__main__':
     local_search_time_start = time.time()
 
     print("\n\n\n-----------------RICERCA LOCALE-----------------\n\n\n")
-    nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(result, gateways, num_iter_local_search)
+    nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(result, gateways, num_iter_local_search,'random')
 
     if not no_display:
         display_solution(nuova_soluzione, saving_path_ls)

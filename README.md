@@ -212,6 +212,9 @@ Se la soluzione nuova ottenuta ha un costo (costo di installazione dei gateway +
 
 
 ### Altra
+fare prima spanning tree poi fare gateway pag 137
+
+
 ## Rappresentazioni grafiche delle soluzioni
 Per aiutarci nella comprensione di cioè che l'algoritmo restituisce, abbiamo utilizzato una libreria python chiamata folium che permette agilmente di creare mappe con grafi e altri elementi grafici.     
 Abbiamo quindi creato diverse rappresentazioni:
