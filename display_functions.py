@@ -535,8 +535,10 @@ def display_difference_between_solutions(nuova_soluzione, mst_new, vecchia_sol, 
             <li><span style='background:orange;opacity:0.7;'></span>Classe 3, Costo 75</li>
             <li><span style='background:red;opacity:0.7;'></span>Classe 4, Costo 175</li>
             <div class='legend-title'>MST</div>
-            <li><span style='background:#b70909;opacity:0.7;'></span>Vecchio MST</li>
-            <li><span style='background:#095ab7;opacity:0.7;'></span>Nuovo MST</li>
+            <li><span style='background:#b70909;opacity:0.7;'></span>Vecchia soluzione</li>
+            <li><span style='background:#095ab7;opacity:0.7;'></span>Nuova soluzione</li>
+            <div class='legend-title'>Nota:</div>
+            <li>I numeri rappresentano i dispositivi<br>installati dopo le ricerche locali</li>
           </ul>
         </div>
         </div>

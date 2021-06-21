@@ -37,8 +37,8 @@ def depth_first_visit(edge_list, this_vertex, visited_vertices, opened_vertices,
 
     # Sennò proseguo la visita in profondità.
 
-    # Può darsi che la lista di vertici aperti sia nulla, ad esempio in casi in cui ho
-    # selezionato due archi che collegano due coppie di vertici diversi. Quindi devo controllare se
+    # Può darsi che la lista di vertici aperti sia nulla, ad esempio in casi in cui sto esaminando
+    # due archi che collegano due coppie di vertici diversi. Quindi devo controllare se
     # la lista dei vertici aperti è vuota, e in quel caso effettuare una nuova visita.
     if len(opened_vertices) > 0:
         next_vertex = opened_vertices[0]
@@ -98,7 +98,7 @@ def minimum_spanning_tree(result):
             })
 
     # Rimuovo gli archi duplicati, vogliamo creare un grafo semplice e non un multigrafo
-    # (molto più veloce farlo dopo, rispetto a fare il controllo durante la creazione del grafo)
+    # (molto più veloce rimuoverli dopo rispetto a fare il controllo durante la creazione del grafo)
     for edge in edges:
         if esiste_arco(edges, edge["node_one"], edge["node_two"]):
             edges.remove(edge)
@@ -125,7 +125,6 @@ def minimum_spanning_tree(result):
         # in ogni caso, elimino l'arco appena considerato e itero
         edges.pop(0)
 
-    # Stampo gli archi selezionati
     costo_totale = 0
     for selected_edge in selected:
         costo_totale += selected_edge["costo"]

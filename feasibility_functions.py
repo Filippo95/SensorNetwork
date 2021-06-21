@@ -34,7 +34,6 @@ def single_demand(solution):
     return True
 
 
-# TODO: Inserire questo vincolo nel modello matematico!!!
 def only_one_gw_per_site(solution):
     for key, a_gateway in solution.items():
         temp_solution = solution.copy()

@@ -17,7 +17,7 @@ import time
 # VARIABILI GLOBALI
 # -----------------------------------
 
-num_sensori =200  # Quanti sensori generare (di default; si può
+num_sensori = 100  # Quanti sensori generare (di default; si può
 # controllare tramite i parametri da riga di comando)
 
 # lista di gateway
@@ -27,6 +27,8 @@ max_x = 12  # longitudine massima est   DX
 min_x = 10  # ovest                     SX
 max_y = 45  # latitudine minima nord    UP
 min_y = 44  # sud                       DN
+
+
 # Originali: 12 / 11 / 45 / 44
 
 
@@ -70,7 +72,7 @@ if __name__ == '__main__':
             num_sensori = int(sys.argv[1])
             set_seed(int(sys.argv[2]))
             order_by = str(sys.argv[3])  # order_by può essere: rapp_cap_costo | rapp_numsensori_costo
-            pack_by = str(sys.argv[4])   # pack_by può essere: distanza_capacita | capacita
+            pack_by = str(sys.argv[4])  # pack_by può essere: distanza_capacita | capacita
             num_iter_local_search = int(sys.argv[5])
         except ValueError as e:
             print(e)
@@ -111,10 +113,10 @@ if __name__ == '__main__':
     classe_3 = Gateway(3, 50, 75)
     classe_4 = Gateway(4, 100, 175)
     set_gateways_classes([classe_0, classe_1, classe_2, classe_3, classe_4])
-    num_class_1 = 200  # Originale: 500
-    num_class_2 = ceil(num_class_1/5)
-    num_class_3 = ceil(num_class_1/25)
-    num_class_4 = ceil(num_class_1/125)
+    num_class_1 = 500  # Originale: 500
+    num_class_2 = ceil(num_class_1 / 3)
+    num_class_3 = ceil(num_class_1 / 9)
+    num_class_4 = ceil(num_class_1 / 27)
     gateways.append(classe_0)  # Gateway di classe 0
     for i in range(num_class_1):
         gateways.append(classe_1)  # Gateway di classe 1
@@ -126,7 +128,8 @@ if __name__ == '__main__':
         gateways.append(classe_4)  # Gateway di classe 4
 
     print("-----------------INIZIALIZZAZIONE-----------------")
-    print(f"Numero di sensori: {num_sensori}\n\n")
+    print(f"Numero di sensori: {num_sensori} | Seed: {get_seed()}")
+    print(f"Order-by: {order_by} | Pack-by: {pack_by}\n\n")
     print("Listino dei dispositivi:")
     print(f"Classe 0 -> Costo: {classe_0.costo}, Disponibilità: \u221e")
     print(f"Classe 1 -> Costo: {classe_1.costo}, Disponibilità: {num_class_1}")
@@ -203,8 +206,8 @@ if __name__ == '__main__':
     if not no_display:
         display_solution(result, saving_path)
 
-    greedy_time = time.time() - greedy_time_start
     if not get_verbosity().quiet:
+        greedy_time = time.time() - greedy_time_start
         print(f"Prima greedy completata in {round(greedy_time)} secondi")
 
     # -----------------------------------
@@ -228,8 +231,8 @@ if __name__ == '__main__':
     if not no_display:
         display_mst(mst, result, saving_path)
 
-    mst_time = time.time() - mst_time_start
     if not get_verbosity().quiet:
+        mst_time = time.time() - mst_time_start
         print(f"Primo MST completato in {round(mst_time)} secondi")
 
     # -----------------------------------
@@ -251,16 +254,42 @@ if __name__ == '__main__':
             sys.stdout = original_stdout
 
     # -----------------------------------
-    # RICERCA LOCALE
+    # RICERCHE LOCALI
     # -----------------------------------
     local_search_time_start = time.time()
 
-    print("\n\n\n-----------------RICERCA LOCALE-----------------\n\n\n")
-    nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(result, gateways, num_iter_local_search,'costo')
+    print("\n\n\n----------------------RICERCHE LOCALI----------------------\n")
+    print("\tNota: Tutti i valori stampati sono arrotondati.")
+    print("\tNota: Delta negativo -> Miglioramento.\n\n")
+    print("----------------------RICERCA LOCALE PER COSTO----------------------\n")
 
-    # eseguo la ricerca locale in modo random
-    nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(nuova_soluzione, gateways, num_iter_local_search,
-                                                                        'random')
+    # Ricerca locale Destroy and Repair effettuata in base ai dispositivi di costo massimo
+    prima_nuova_soluzione, prima_nuova_funzione_obiettivo = large_neighborhood_search(result, gateways,
+                                                                                      order_by, pack_by, 'costo',
+                                                                                      num_iter_local_search)
+
+    primo_nuovo_mst, primo_nuovo_costo_mst = minimum_spanning_tree(prima_nuova_soluzione)
+    prima_nuova_greedy_cost = prima_nuova_funzione_obiettivo - primo_nuovo_costo_mst
+    primo_risparmio = funzione_obiettivo - prima_nuova_funzione_obiettivo
+
+    if not no_display:
+        with open(text_output_path, 'a') as f:
+            sys.stdout = f
+            print(f"\nDopo la ricerca locale Destroy and Repair per costo massimo "
+                  f"con {num_iter_local_search} iterazioni:")
+            print(f"Il costo della greedy è {round(prima_nuova_greedy_cost)}")
+            print(f"Il costo del MST è {round(primo_nuovo_costo_mst)}")
+            print(f"Il costo totale è {round(prima_nuova_funzione_obiettivo)}")
+            print(f"La funzione obiettivo è scesa di {round(primo_risparmio)} "
+                  f"rispetto alla soluzione iniziale")
+            sys.stdout = original_stdout
+    # TODO: Aggiungere al file .csv solo la funzione obiettivo
+
+    print("\n\n\n----------------------RICERCA LOCALE RANDOM----------------------\n\n\n")
+    # Ricerca locale Destroy and Repair effettuata con metodo random
+    nuova_soluzione, funzione_obiettivo_new = large_neighborhood_search(prima_nuova_soluzione, gateways,
+                                                                        order_by, pack_by, 'random',
+                                                                        num_iter_local_search)
     if not no_display:
         display_solution(nuova_soluzione, saving_path_ls)
 
@@ -271,28 +300,32 @@ if __name__ == '__main__':
         display_full_solution(mst_new, nuova_soluzione, saving_path_ls)
 
     greedy_cost_new = funzione_obiettivo_new - mst_cost_new
-    risparmio = funzione_obiettivo - funzione_obiettivo_new
+    risparmio_dopo_greedy = prima_nuova_funzione_obiettivo - funzione_obiettivo_new
+    risparmio_totale = funzione_obiettivo - funzione_obiettivo_new
 
     if not no_display:
         with open(text_output_path, 'a') as f:
             sys.stdout = f
-            print(f"\nDopo la ricerca locale Destroy and Repair con {num_iter_local_search} iterazioni:")
+            print(f"\nDopo la ricerca locale Destroy and Repair casuale con {num_iter_local_search} iterazioni:")
             print(f"Il costo della greedy è {round(greedy_cost_new)}")
             print(f"Il costo del MST è {round(mst_cost_new)}")
             print(f"Il costo totale è {round(funzione_obiettivo_new)}")
-            print(f"La funzione obiettivo è scesa di {round(risparmio)}")
+            print(f"La funzione obiettivo è scesa di {round(risparmio_dopo_greedy)} "
+                  f"rispetto alla prima ricerca locale")
+            print(f"La funzione obiettivo è scesa di {round(risparmio_totale)} "
+                  f"rispetto alla soluzione iniziale")
             sys.stdout = original_stdout
 
     print(f"\n\nIl costo totale della soluzione dopo la ricerca locale è {round(funzione_obiettivo_new)}")
 
     print(f"\n\nCosto iniziale: {round(funzione_obiettivo)}, Costo finale: {round(funzione_obiettivo_new)}, "
-          f"la funzione obiettivo si è ridotta di {round(risparmio)}")
+          f"la funzione obiettivo si è ridotta di {round(risparmio_totale)}")
     if not no_display:
         display_difference_between_solutions(nuova_soluzione, mst_new, result, mst, saving_path_ls)
 
-    local_search_time = time.time() - local_search_time_start
     if not get_verbosity().quiet:
-        print(f"\nRicerca locale Destroy and Repair completata in {round(local_search_time)} secondi")
+        local_search_time = time.time() - local_search_time_start
+        print(f"\nRicerche locali completate in {round(local_search_time)} secondi")
 
     # Stampa sul file csv il riepilogo dell'esecuzione, si potrà usare per creare grafici e statistiche
     # Non vengono inserite righe duplicate
@@ -300,9 +333,10 @@ if __name__ == '__main__':
         output_string = \
             f"{get_seed()},{num_sensori},{order_by},{pack_by},{num_iter_local_search}," + \
             f"{round(greedy_cost)},{round(mst_cost)},{round(funzione_obiettivo)}," + \
-            f"{round(greedy_cost_new)},{round(mst_cost_new)},{round(funzione_obiettivo_new)},{round(risparmio)}," + \
+            f"{round(prima_nuova_funzione_obiettivo)},{round(funzione_obiettivo_new)}," + \
             f"{num_class_1}"
-        a_line = f.readline()[:-1]  # viene letto anche il carattere \n, che va ignorato (solo su Windows)
+
+        a_line = f.readline()[:-1]  # viene letto anche il carattere \n, che va ignorato
         already_written = False
         while a_line != '' and not already_written:
             if a_line == output_string:
@@ -317,8 +351,8 @@ if __name__ == '__main__':
         else:
             print("\nSoluzione non aggiunta al file .csv, è già presente")
 
-    end_time = time.time() - start_time
     if not get_verbosity().quiet:
+        end_time = time.time() - start_time
         print(f"\nComputazione completata in {round(end_time)} secondi")
 
     # TODO: Idee di cui non siamo troppo convinti:

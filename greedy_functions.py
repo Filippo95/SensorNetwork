@@ -79,13 +79,15 @@ def calcola_scenario(sensor_list, gateway_list, order_by="rapp_cap_costo"):
         num_senders = len(this_senders)
         for temp_sens in this_senders:
             tot_capacita += temp_sens.send_rate
-        rapp_cap_costo = tot_capacita / find_best_gateway(tot_capacita, gateway_list).costo
-        rapp_numsensori_costo = num_senders / find_best_gateway(tot_capacita, gateway_list).costo
-        sens_dictionary[this_sens] = {"senders": this_senders,
-                                      "tot_capacita": tot_capacita,
-                                      "rapp_cap_costo": rapp_cap_costo,
-                                      "rapp_numsensori_costo": rapp_numsensori_costo
-                                      }
+        best_gateway = find_best_gateway(tot_capacita, gateway_list)
+        rapp_cap_costo = tot_capacita / best_gateway.costo
+        rapp_numsensori_costo = num_senders / best_gateway.costo
+        sens_dictionary[this_sens] = {
+            "senders": this_senders,
+            "tot_capacita": tot_capacita,
+            "rapp_cap_costo": rapp_cap_costo,
+            "rapp_numsensori_costo": rapp_numsensori_costo
+        }
         if get_verbosity().more_verbose:
             print(f"\nIl sensore {this_sens.id} è nel raggio di {num_senders} sensori, " +
                   f"che hanno una capacità totale di {tot_capacita} {this_sens.send_rate_unit}")

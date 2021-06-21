@@ -109,6 +109,8 @@ def prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter, no_display
     if not os.path.isdir("./solutions"):
         os.mkdir("./solutions")
 
+    # Se viene passata l'opzione --no-display si aggiunge solamente il risultato
+    # dell'esecuzione al file .csv (per analisi e creazione di grafici)
     if no_display:
         text_output_path_grafici = f"./solutions/graph_data.csv"
 
@@ -117,8 +119,8 @@ def prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter, no_display
                 original_stdout = sys.stdout
                 sys.stdout = f
                 print("seed,numsensori,order_by,pack_by,num_iter_ls,"
-                      "first_greedy,first_mst,first_tot,"
-                      "ls_greedy,ls_mst,ls_tot,risparmio,num_gw_class_1")
+                      "greedy_cost,mst_cost,first_tot,first_ls_tot,second_ls_tot,"
+                      "num_gw_class_1")
                 sys.stdout = original_stdout
 
         return None, None, None, text_output_path_grafici
@@ -202,4 +204,3 @@ def get_global_sensors():
 def set_global_sensors(new_sensors):
     global sensors
     sensors = new_sensors
-
