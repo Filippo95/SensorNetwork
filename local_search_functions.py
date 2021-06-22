@@ -29,9 +29,6 @@ def destroy(solution, method='costo'):
     # prima per classe (ossia per costo), poi i dispositivi della stessa
     # classe allora si ordinano per un valore casuale fra 0 e 1.
     if method == 'costo':
-        # for a_gateway in solution.values():
-        #     a_gateway["random_factor"] = rn.uniform(0, 1)
-
         solution = {k: v for k, v in sorted(solution.items(),
                                             key=lambda item: (item[1]["classe"], rn.uniform(0, 1)),
                                             reverse=True)}
@@ -71,13 +68,13 @@ def repair(destroyed_solution, sensori_scoperti, gateways, order_by, pack_by):
     return repaired_solution
 
 
-# Ricerca Locale tramite Destroy and Repair
 def accept(delta, temperatura):
     # se non è migliore devo accettare il peggioramento con una certa probabilità (Simulated Annealing)
     prob_accettata = math.exp(-delta / temperatura)  # è un valore tra 0 e 1
     return rn.uniform(0, 1) < prob_accettata
 
 
+# Ricerca Locale tramite Destroy and Repair
 def large_neighborhood_search(initial_solution, gateways, order_by, pack_by, destroy_method='costo', num_iterazioni=10):
     temperatura = 100  # Valore iniziale della temperatura
 
