@@ -3,8 +3,10 @@ import os
 
 
 # Struttura:
-#  0        1        2        3       4             5          6        7          8            9             10
-# seed,numsensori,order_by,pack_by,num_iter_ls,greedy_cost,mst_cost,first_tot,first_ls_tot,second_ls_tot,num_gw_class_1
+#  0        1        2        3       4             5          6        7          8
+# seed,numsensori,order_by,pack_by,num_iter_ls,greedy_cost,mst_cost,first_tot,first_ls_tot,
+#       9             10              11
+# second_ls_tot,num_gw_class_1,fattore_riduzione
 
 # S=seed
 # O=0 -> order_by = rapp_cap_costo
@@ -27,7 +29,7 @@ def plot(save_directory, num_sensori):
                 seed = f"S={items[0]}"
                 order_by = "O=0" if items[2] == "rapp_cap_costo" else "O=1"
                 pack_by = "P=0" if items[3] == "distanza_capacita" else "P=1"
-                x_values.append(f"{seed},{order_by},{pack_by}")
+                x_values.append(f"{seed},{order_by},{pack_by},R={items[11]}")
                 y_values.append(int(items[9]))  # second_ls_tot
                 y_values_2.append(int(items[8]))  # first_ls_tot
                 y_values_3.append(int(items[7]))  # first_tot
@@ -44,7 +46,8 @@ def plot(save_directory, num_sensori):
                  f'O=0 -> order_by = rapp_cap_costo | '
                  f'O=1 -> order_by = rapp_numsensori_costo | '
                  f'P=0 -> pack_by = distanza_capacita | '
-                 f'P=1 -> pack_by = capacita')
+                 f'P=1 -> pack_by = capacita | '
+                 f'R=<fattore_di_riduzione>')
     plt.xticks(rotation=90, fontsize=10)
 
     figure = plt.gcf()
@@ -60,6 +63,6 @@ if __name__ == "__main__":
     # plot(save_dir, 100)
     # plot(save_dir, 200)
     # plot(save_dir, 300)
-    plot(save_dir, 400)
+    # plot(save_dir, 400)
     # plot(save_dir, 500)
-    # plot(save_dir, 600)
+    plot(save_dir, 1000)

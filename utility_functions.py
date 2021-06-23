@@ -120,7 +120,7 @@ def prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter, no_display
                 sys.stdout = f
                 print("seed,numsensori,order_by,pack_by,num_iter_ls,"
                       "greedy_cost,mst_cost,first_tot,first_ls_tot,second_ls_tot,"
-                      "num_gw_class_1")
+                      "num_gw_class_1,fattore_riduzione")
                 sys.stdout = original_stdout
 
         return None, None, None, text_output_path_grafici

@@ -66,14 +66,16 @@ if __name__ == '__main__':
     pack_by = "distanza_capacita"
     num_iter_local_search = 50
     no_display = False
+    fattore_riduzione = 4
 
-    if len(sys.argv) > 5:
+    if len(sys.argv) > 6:
         try:
             num_sensori = int(sys.argv[1])
             set_seed(int(sys.argv[2]))
             order_by = str(sys.argv[3])  # order_by può essere: rapp_cap_costo | rapp_numsensori_costo
             pack_by = str(sys.argv[4])  # pack_by può essere: distanza_capacita | capacita
             num_iter_local_search = int(sys.argv[5])
+            fattore_riduzione = int(sys.argv[6])
         except ValueError as e:
             print(e)
             print("\nUso:")
@@ -113,10 +115,11 @@ if __name__ == '__main__':
     classe_3 = Gateway(3, 50, 75)
     classe_4 = Gateway(4, 100, 175)
     set_gateways_classes([classe_0, classe_1, classe_2, classe_3, classe_4])
+
     num_class_1 = 500  # Originale: 500
-    num_class_2 = ceil(num_class_1 / 3)
-    num_class_3 = ceil(num_class_1 / 9)
-    num_class_4 = ceil(num_class_1 / 27)
+    num_class_2 = ceil(num_class_1 / fattore_riduzione)
+    num_class_3 = ceil(num_class_1 / fattore_riduzione**2)
+    num_class_4 = ceil(num_class_1 / fattore_riduzione**3)
     gateways.append(classe_0)  # Gateway di classe 0
     for i in range(num_class_1):
         gateways.append(classe_1)  # Gateway di classe 1
@@ -334,7 +337,7 @@ if __name__ == '__main__':
             f"{get_seed()},{num_sensori},{order_by},{pack_by},{num_iter_local_search}," + \
             f"{round(greedy_cost)},{round(mst_cost)},{round(funzione_obiettivo)}," + \
             f"{round(prima_nuova_funzione_obiettivo)},{round(funzione_obiettivo_new)}," + \
-            f"{num_class_1}"
+            f"{num_class_1},{fattore_riduzione}"
 
         a_line = f.readline()[:-1]  # viene letto anche il carattere \n, che va ignorato
         already_written = False
