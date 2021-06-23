@@ -58,7 +58,8 @@ class Gateway:
 if __name__ == '__main__':
     start_time = time.time()
     # Come far partire il programma da riga di comando:
-    # python main.py <numsensori> <seed> <order_by> <pack_by> <num_iter_ls> [-v] [-vv] [-q] [--no-display]
+    # python main.py <numsensori> <seed> <order_by> <pack_by> <num_iter_ls> <fattore_riduzione>
+    # [-v] [-vv] [-q] [--no-display]
     # I parametri fra parentesi angolari vanno passati tutti.
     # Passare al massimo uno solo dei modificatori dell'output (-v, -vv o -q).
 
