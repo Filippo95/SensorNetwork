@@ -2,7 +2,7 @@
 
 ## Il Problema
 Sono dati n sensori installati in altrettanti siti. Ogni sensore s riesce a trasmettere dati a qualunque altro sensore entro una distanza ds che dipende dalla morfologia circostante.  Una volta installato un apposito dispositivo in un sito, questo può raccogliere le informazioni da tutti i sensori vicini, e instradarli sulla rete che collega i dispositivi. Noto il costo di un dispositivo e di ogni potenziale collegamenti fra siti, determinare la rete di costo minimo (quanti dispositivi installare e su che nodi e come collegare i nodi) in modo che ogni sensore sia collegato).
-Potreste considerare la variante capacitata del problema (i sensori hanno ciascuno una data domanda e i dispositivi possono essere di k tipi diversi, ciascuno con un costo e una capacità massima)
+Potreste considerare la variante capacitata del problema (i sensori hanno ciascuno una data domanda e i dispositivi possono essere di k tipi diversi, ciascuno con un costo e una capacità massima).
 
 ## Analisi
 Il problema, secondo la nostra modellazione, è composto sostanzialmente da due problemi principali:
