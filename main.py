@@ -286,7 +286,6 @@ if __name__ == '__main__':
             print(f"La funzione obiettivo è scesa di {round(primo_risparmio)} "
                   f"rispetto alla soluzione iniziale")
             sys.stdout = original_stdout
-    # TODO: Aggiungere al file .csv solo la funzione obiettivo
 
     print("\n\n\n----------------------RICERCA LOCALE RANDOM----------------------\n\n\n")
     # Ricerca locale Destroy and Repair effettuata con metodo random
@@ -357,13 +356,3 @@ if __name__ == '__main__':
     if not get_verbosity().quiet:
         end_time = time.time() - start_time
         print(f"\nComputazione completata in {round(end_time)} secondi")
-
-    # TODO: Idee di cui non siamo troppo convinti:
-    # - Per il test di ammissibilità, fare anche qualche controllo sul minimum spanning tree?
-    # - Considerare anche il costo del MST durante la greedy?
-    # - Aggiungere come criterio nella greedy non solo il massimo rapporto capacità/costo,
-    # ma anche un ulteriore valore che considera quanti sensori sto coprendo, ossia: se ho un solo sensore di
-    # capacità 8 e un gateway di capacità 8, il rapporto capacità/costo è 1.0 (il massimo). Però vorrei mettere
-    # in testa al nostro dizionario di siti da considerare quelli che hanno un rapporto capacità/costo elevato
-    # e che contemporaneamente coprono molti sensori, così "sfoltisco" il prima possibile i siti molto densi.
-    # E' un po' una combinazione del rapporto capacità/costo e numsensori/costo.
