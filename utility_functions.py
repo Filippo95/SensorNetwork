@@ -10,7 +10,7 @@ from deprecated import deprecated
 class Verbosity:
     def __init__(self, quiet, verbose, more_verbose):
         self.quiet = quiet
-        self.verbose = verbose or more_verbose       # se ho output more_verbose voglio che si stampi anche il verbose
+        self.verbose = verbose or more_verbose  # se ho output more_verbose voglio che si stampi anche il verbose
         self.more_verbose = more_verbose
 
 
@@ -109,6 +109,10 @@ def prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter, no_display
     if not os.path.isdir("./solutions"):
         os.mkdir("./solutions")
 
+    intestazione_csv = "seed,numsensori,order_by,pack_by,num_iter_ls," + \
+                       "greedy_cost,mst_cost,first_tot,first_ls_tot,second_ls_tot," + \
+                       "num_gw_class_1,fattore_riduzione"
+
     # Se viene passata l'opzione --no-display si aggiunge solamente il risultato
     # dell'esecuzione al file .csv (per analisi e creazione di grafici)
     if no_display:
@@ -118,9 +122,7 @@ def prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter, no_display
             with open(text_output_path_grafici, 'w') as f:
                 original_stdout = sys.stdout
                 sys.stdout = f
-                print("seed,numsensori,order_by,pack_by,num_iter_ls,"
-                      "greedy_cost,mst_cost,first_tot,first_ls_tot,second_ls_tot,"
-                      "num_gw_class_1,fattore_riduzione")
+                print(intestazione_csv)
                 sys.stdout = original_stdout
 
         return None, None, None, text_output_path_grafici
@@ -149,9 +151,7 @@ def prepara_cartelle_e_file(num_sensori, order_by, pack_by, num_iter, no_display
         with open(text_output_path_grafici, 'w') as f:
             original_stdout = sys.stdout
             sys.stdout = f
-            print("seed,numsensori,order_by,pack_by,num_iter_ls,"
-                  "first_greedy,first_mst,first_tot,"
-                  "ls_greedy,ls_mst,ls_tot,risparmio")
+            print(intestazione_csv)
             sys.stdout = original_stdout
 
     return saving_path, saving_path_ls, text_output_path, text_output_path_grafici
